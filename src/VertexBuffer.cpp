@@ -28,7 +28,7 @@ void VertexBuffer::Allocate(const uint32_t size)
 void VertexBuffer::SetData(const void* data, uint32_t size)
 {
     glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size * sizeof(uint32_t), data);
     //m_CurrentOffset += sizeof(Vertex) * count;
 }
 

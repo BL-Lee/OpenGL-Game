@@ -44,7 +44,7 @@ Application::Application()
     { 0.5f, 0.0f },//speed
     Random::Float() * 360.0f, //rotation
     Random::Float() * 10000.0f, //spin speed
-    0.2f, //lifetime
+    3.0f, //lifetime
     0.0f, //0
     false, //isactive
     };
@@ -143,8 +143,9 @@ void Application::Run()
         
         Renderer::DrawQuad({ 0.5f,0.0f,0.0f }, { 100.0f,100.0f }, goose, { 1.0f,1.0f,1.0f,1.0f });
         Renderer::DrawQuad({ 105.0f,-100.0f,0.1f }, { 1000.0f,100.0f }, { 0.5f,0.5f,0.2f,1.0f });
+        Renderer::DrawTriangle({ 105.0f,100.0f,0.1f }, { 200.0f,100.0f }, { 0.5f,0.5f,0.2f,1.0f });
         Renderer::EndScene();
-        Renderer::RenderUI(m_UIManager, m_Camera);
+        //Renderer::RenderUI(m_UIManager, m_Camera);
         m_Window->OnUpdate();
     }
 }
