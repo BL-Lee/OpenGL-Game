@@ -4,7 +4,7 @@
 Particle ParticleSystem::s_BaseParticle;
 std::vector<Particle> ParticleSystem::s_ParticlePool;
 uint32_t ParticleSystem::s_TotalParticles;
-uint32_t ParticleSystem::s_ParticleIndex;
+int32_t ParticleSystem::s_ParticleIndex;
 
 void ParticleSystem::Init(uint32_t amount)
 {
@@ -22,16 +22,17 @@ void ParticleSystem::Add(uint32_t amount)
 	{
 		s_ParticlePool[s_ParticleIndex] = s_BaseParticle;
 		s_ParticlePool[s_ParticleIndex].IsActive = true;
-		s_ParticlePool[s_ParticleIndex].Velocity = { (Random::Float() - 0.5f) * 300.0f, (Random::Float() - 0.5f) * 300.0f};
-		s_ParticleIndex = (s_ParticleIndex + 1) % s_ParticlePool.size();
+		//s_ParticlePool[s_ParticleIndex].Velocity.x += (Random::Float() + 1.0f) * 300.0f;
+		//s_ParticlePool[s_ParticleIndex].Velocity.y += (Random::Float() + 1.0f) * 300.0f;
+		s_ParticleIndex = (s_ParticleIndex - 1) % s_ParticlePool.size();
 	} 
 }
-void ParticleSystem::Add(const Particle& p)
+void ParticleSystem::Add(const Particle p)
 {
 	s_ParticlePool[s_ParticleIndex] = p;
 	s_ParticlePool[s_ParticleIndex].IsActive = true;
 	s_ParticlePool[s_ParticleIndex].Velocity = { (Random::Float() - 0.5f) * 10.0f, (Random::Float() - 0.5f)};
-	s_ParticleIndex = (s_ParticleIndex + 1) % s_ParticlePool.size();
+	s_ParticleIndex = (s_ParticleIndex - 1) % s_ParticlePool.size();
 }
 void ParticleSystem::Draw(float deltaTime)
 {

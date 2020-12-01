@@ -13,6 +13,10 @@
 
 #include <iostream>
 #define BIND_EVENT_FUNC(x) std::bind(&Application::x, this, std::placeholders::_1)
+ /*
+ * To run this program:
+    * Have to move this to src, and then run
+ */
 
 
 
@@ -191,6 +195,7 @@ void Application::Run()
 
 int main()
 {
+
     Application app;
     app.Run();
     app.Shutdown();

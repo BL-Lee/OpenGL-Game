@@ -96,9 +96,9 @@ void Renderer::Init()
     s_RendererData->VertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
     s_RendererData->VertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
 
-    s_RendererData->VertexPositions[4] = { 0.0f,  0.0f, 0.0f, 1.0f };
-    s_RendererData->VertexPositions[5] = { 0.5f,  0.0f, 0.0f, 1.0f };
-    s_RendererData->VertexPositions[6] = { 0.0f, 0.5f, 0.0f, 1.0f };
+    s_RendererData->VertexPositions[4] = {  0.0f,            1.0f, 0.0f, 1.0f };
+    s_RendererData->VertexPositions[5] = {  0.86602540378f, -0.5f, 0.0f, 1.0f };
+    s_RendererData->VertexPositions[6] = { -0.86602540378f, -0.5f, 0.0f, 1.0f };
    
 }
 
@@ -433,13 +433,14 @@ void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const std
         s_RendererData->VertexBufferPtr->TextureIndex = texIndex;
         s_RendererData->VertexBufferPtr++;
 
-        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 0] = 0 + s_RendererData->IndexCount;
-        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 1] = 1 + s_RendererData->IndexCount;
-        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 2] = 2 + s_RendererData->IndexCount;
+        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 0] = 0 + s_RendererData->IndexOffset;
+        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 1] = 1 + s_RendererData->IndexOffset;
+        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 2] = 2 + s_RendererData->IndexOffset;
 
-        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 3] = 2 + s_RendererData->IndexCount;
-        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 4] = 3 + s_RendererData->IndexCount;
-        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 5] = 0 + s_RendererData->IndexCount;
+        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 3] = 2 + s_RendererData->IndexOffset;
+        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 4] = 3 + s_RendererData->IndexOffset;
+        s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 5] = 0 + s_RendererData->IndexOffset;
+        s_RendererData->IndexOffset += 4;
 
         s_RendererData->IndexCount += 6;
 

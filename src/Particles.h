@@ -25,12 +25,12 @@ private:
 	static Particle s_BaseParticle;
 	static std::vector<Particle> s_ParticlePool;
 	static uint32_t s_TotalParticles;
-	static uint32_t s_ParticleIndex;
+	static int32_t s_ParticleIndex;
 public:
 	static void Init(uint32_t amount);
 	static void SetParticle(const Particle& p);
 	static void Add(uint32_t amount);
-	static void Add(const Particle& p);
+	static void Add(const Particle p);
 	static void Draw(float deltaTime);
 
 	ParticleSystem() {}
