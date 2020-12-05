@@ -37,6 +37,8 @@ public:
 	inline uint32_t GetWidth() { return m_Data.Width; }
 	inline uint32_t GetHeight() { return m_Data.Height; }
 
+	void SetDimensions(uint32_t x, uint32_t y);
+
 	inline GLFWwindow* GetGLWindow() const { return m_Window; }
 private:
 	GLFWwindow* m_Window;

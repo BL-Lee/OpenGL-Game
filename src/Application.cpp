@@ -14,9 +14,6 @@
 #include <iostream>
 #define BIND_EVENT_FUNC(x) std::bind(&Application::x, this, std::placeholders::_1)
 
-
-
-
 Application::Application()
 {
     WindowProps props(900, 900, "Bababooey", false);
@@ -30,20 +27,20 @@ Application::Application()
     Particle p =
     {
     { 0.0f,0.0f },
-    { 5.0f, 1.0f },
-    { 20.0f, 70.0f},
+    { 0.0f, 0.0f },
+    { 50.0f, 50.0f},
     { 0.0f, 0.5f, 1.0f, 1.0f },//scolour
     { 0.9f, 0.3f, 0.15f, 1.0f },//endcolor
     { 0.0f, 0.0f },//speed
     90.0f,//Random::Float() * 360.0f, //rotation
-    Random::Float() * 0.0f, //spin speed
+    Random::Float() * 400.0f, //spin speed
     0.5f, //lifetime
     0.0f, //0
     false, //isactive
     };
     ParticleSystem::SetParticle(p);
     ParticleSystem::Init(999);
-
+    player.pos = { 0.0f,0.0f,-0.1f };
     player.size = { 10.0f,20.0f };
     player.acceleration = 0.1f;
     
@@ -64,6 +61,7 @@ void Application::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FUNC(OnWindowClose));
+    dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FUNC(OnWindowResize));
     dispatcher.Dispatch<KeyPressedEvent>(BIND_EVENT_FUNC(OnKeyPress));
     dispatcher.Dispatch<KeyReleasedEvent>(BIND_EVENT_FUNC(OnKeyRelease));
     dispatcher.Dispatch<MousePressedEvent>(BIND_EVENT_FUNC(OnMousePress));
@@ -72,6 +70,15 @@ void Application::OnEvent(Event& e)
 bool Application::OnWindowClose(WindowCloseEvent& e)
 {
     IsRunning = false;
+    return true;
+}
+
+bool Application::OnWindowResize(WindowResizeEvent& e)
+{
+    int x = e.GetX();
+    int y = e.GetY();
+    m_Window->SetDimensions(x, y);
+    m_Camera->SetDimensions((float)x, (float)y);
     return true;
 }
 
@@ -128,14 +135,14 @@ void Application::Run()
         deltaTime = (nowTime - lastTime);
         lastTime = nowTime;
         m_Camera->UpdateMovement(m_Window, deltaTime);
-#if 0
+
         if (Input::GetMouseButton(m_Window, GLFW_MOUSE_BUTTON_1))
         {
             Particle& p = ParticleSystem::GetbaseParticle();
             p.Pos = Input::GetMousePosOpenGLCoords(m_Window, m_Camera);
             ParticleSystem::Add(1);
         }    
-#endif
+
         if (Input::GetKey(m_Window, GLFW_KEY_UP))
         {
             glm::vec2 direction = {cos(glm::radians(player.rotation + 90.0f)), sin(glm::radians(player.rotation + 90.0))};
@@ -143,7 +150,7 @@ void Application::Run()
             Particle& p = ParticleSystem::GetbaseParticle();
             p.Pos = player.pos;
             p.Rotation = player.rotation + 90.0f;
-            p.Velocity = 300.0f * -direction - player.velocity;
+            p.Velocity =  100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
             ParticleSystem::Add(1);
 
             player.velocity += direction * player.acceleration;
@@ -172,6 +179,11 @@ void Application::Run()
 
         player.pos.x += player.velocity.x;
         player.pos.y += player.velocity.y;
+        if (player.rotation > 360.0f)
+            player.rotation -= 360.0f;
+        if (player.rotation < 0.0f)
+            player.rotation += 360.0f;
+#if 0
         int width = (int)m_Window->GetWidth();
         int height = (int)m_Window->GetHeight();
         if (player.pos.x >  width / 2)
@@ -183,9 +195,7 @@ void Application::Run()
             player.pos.y = -height / 2;
         if (player.pos.y < -height / 2)
             player.pos.y =  height / 2;
-
-
-
+#endif
     }
 }
 

@@ -14,5 +14,6 @@ public:
 	void Scale(float sc);
 	void UpdateMovement(const std::shared_ptr<Window> window, float deltaTime);
 	const glm::mat4& GetMatrix() const { return m_ViewMatrix; }
-	const glm::vec2& MouseScreenToGLCoord(const std::shared_ptr<Window> window);
+	void SetDimensions(float width, float height);
+	
 };

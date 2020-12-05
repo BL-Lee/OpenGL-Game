@@ -31,6 +31,7 @@ public:
 
 	void OnEvent(Event& e);
 	bool OnWindowClose(WindowCloseEvent& e);
+	bool OnWindowResize(WindowResizeEvent& e);
 	bool OnKeyPress(KeyPressedEvent& e);
 	bool OnKeyRelease(KeyReleasedEvent& e);
 	bool OnMousePress(MousePressedEvent& e);

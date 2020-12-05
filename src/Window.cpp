@@ -112,6 +112,18 @@ Window::Window(const WindowProps& props)
             data.CallbackFunc(e);
         }
     );
+    glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+            WindowResizeEvent e(width,height);
+            data.CallbackFunc(e);
+        });
+}
+void Window::SetDimensions(uint32_t x, uint32_t y)
+{
+    m_Data.Width = x;
+    m_Data.Height = y;
+    glViewport(0, 0, x, y);
 }
 Window::~Window()
 {
