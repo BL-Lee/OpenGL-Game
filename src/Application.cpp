@@ -10,15 +10,19 @@
 
 #include "Input.h"
 #include "Particles.h"
+#include "Entity.h"
+#include "Physics/Collision.h"
 
 #include <iostream>
 #define BIND_EVENT_FUNC(x) std::bind(&Application::x, this, std::placeholders::_1)
 
+std::shared_ptr<Window> window;
+
 Application::Application()
 {
-    WindowProps props(900, 900, "Bababooey", false);
-    m_Window = std::make_shared<Window>(props);
-    m_Window->SetEventCallback(BIND_EVENT_FUNC(OnEvent));
+    WindowProps props(1366, 768, "Bababooey", false);
+    window = std::make_shared<Window>(props);
+    window->SetEventCallback(BIND_EVENT_FUNC(OnEvent));
     m_Camera = std::make_shared<OrthoCamera>((float)props.Width, (float)props.Height);
     Renderer::Init();
 
@@ -41,20 +45,22 @@ Application::Application()
     ParticleSystem::SetParticle(p);
     ParticleSystem::Init(999);
     player.pos = { 0.0f,0.0f,-0.1f };
-    player.size = { 10.0f,20.0f };
+    player.size = { 20.0f,10.0f };
     player.acceleration = 0.1f;
-    
+    player.colour = { 0.7f,0.1f,0.2f,1.0f };
+    player.Accelerate = AccelerateEntityForward;
+    player.UpdatePosition = UpdatePosition;
 
 }
 void Application::Shutdown()
 {
     Renderer::Shutdown();
-    m_Window->Shutdown();
+    window->Shutdown();
 }
 Application::~Application()
 {
     //Renderer::Shutdown();
-    //m_Window->Shutdown();
+    //window->Shutdown();
 }
 
 void Application::OnEvent(Event& e)
@@ -77,7 +83,7 @@ bool Application::OnWindowResize(WindowResizeEvent& e)
 {
     int x = e.GetX();
     int y = e.GetY();
-    m_Window->SetDimensions(x, y);
+    window->SetDimensions(x, y);
     m_Camera->SetDimensions((float)x, (float)y);
     return true;
 }
@@ -97,7 +103,7 @@ bool Application::OnMousePress(MousePressedEvent& e)
     if (e.GetKeyCode() == GLFW_MOUSE_BUTTON_1)
     {
         std::vector<UIElement*> elements = m_UIManager.GetElements();
-        glm::vec2 mousePos = Input::GetMousePosOpenGLCoords(m_Window, m_Camera);
+        glm::vec2 mousePos = Input::GetMousePosOpenGLCoords(window, m_Camera);
         for (uint32_t i = 0; i < elements.size(); i++)
         {
             if (elements[i]->IsInBounds(mousePos.x,mousePos.y))
@@ -112,7 +118,16 @@ bool Application::OnMousePress(MousePressedEvent& e)
 
 void Application::Run()
 {
+
+    glm::vec2 shape1[] = { {1.0f,1.0f},{2.0f,1.0f},{2.0f,2.0f},{1.0f,2.0f} };
+    glm::vec2 shape2[] = { {0.5f,1.0f},{4.0f,1.0f},{4.0f,2.0f},{0.5f,1.0f} };
+    if (Collision::isColliding(shape1, 4, shape2, 4))
+    {
+        std::cout << "its colliding" << std::endl;
+    }
+
     std::shared_ptr<Texture> goose = std::make_shared<Texture>("res/textures/goose.png");
+
 
     std::shared_ptr<Font> m_silkFont = std::make_shared<Font>();
     TextBox rotation({ -250.0f,0.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
@@ -121,50 +136,87 @@ void Application::Run()
     m_UIManager.AddTextBox(rotation);
     m_UIManager.AddTextBox(velocity);
     m_UIManager.AddTextBox(position);
-    UIElement randomElement({ 0.0f,-300.0f,0.01f }, { 50.0f,50.0f }, { 1.0f,1.0f,1.0f,0.2f });
-    m_UIManager.AddBaseElement(randomElement);
+
+    TextBox wrapper({ -250.0f,-150.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,0.0f }, "Ui Eleeeeeeeeeement its wrap wrap wrap wrap awrap", m_silkFont);
+    m_UIManager.AddTextBox(wrapper);
+
+    glm::vec4 basevertices[3] = { glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(-0.5f, -0.86602540378f, 0.0f, 1.0f), glm::vec4(-0.5f, 0.86602540378f, 0.0f, 1.0f) };
+    glm::vec2 vertices[3] = { {0.0f,0.0f},{0.0f,0.0f},{0.0f,0.0f} };
+
+    glm::vec2 box[4] = { { -100.0f,100.0f },{100.0f,100.0f},{100.0f,300.0f},{-100.0f,300.0f} };
+    player.vertices = vertices;
+
+
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), player.pos)
+        * glm::rotate(glm::mat4(1.0f), glm::radians(player.rotation), { 0.0f,0.0f,1.0f })
+        * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
 
     double lastTime = glfwGetTime();
     double deltaTime = 0, nowTime = 0;
 
     while (IsRunning)
-    {    
+    {
         Renderer::Clear();
         // - Measure time
         nowTime = glfwGetTime();
         deltaTime = (nowTime - lastTime);
         lastTime = nowTime;
-        m_Camera->UpdateMovement(m_Window, deltaTime);
+        m_Camera->UpdateMovement(window, deltaTime);
 
-        if (Input::GetMouseButton(m_Window, GLFW_MOUSE_BUTTON_1))
+        if (Input::GetMouseButton(window, GLFW_MOUSE_BUTTON_1))
         {
             Particle& p = ParticleSystem::GetbaseParticle();
-            p.Pos = Input::GetMousePosOpenGLCoords(m_Window, m_Camera);
+            p.Pos = Input::GetMousePosOpenGLCoords(window, m_Camera);
             ParticleSystem::Add(1);
-        }    
+        }
 
-        if (Input::GetKey(m_Window, GLFW_KEY_UP))
+        if (Input::GetKey(window, GLFW_KEY_UP))
         {
-            glm::vec2 direction = {cos(glm::radians(player.rotation + 90.0f)), sin(glm::radians(player.rotation + 90.0))};
+            glm::vec2 direction = { cos(glm::radians(player.rotation)), sin(glm::radians(player.rotation)) };
 
             Particle& p = ParticleSystem::GetbaseParticle();
             p.Pos = player.pos;
             p.Rotation = player.rotation + 90.0f;
-            p.Velocity =  100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
+            p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
             ParticleSystem::Add(1);
 
-            player.velocity += direction * player.acceleration;
+            player.Accelerate(player, glm::radians(player.rotation));
+
         }
-        if (Input::GetKey(m_Window, GLFW_KEY_RIGHT))       
+        else
+        {
+            player.velocity = { 0.0f,0.0f };
+        }
+        if (Input::GetKey(window, GLFW_KEY_RIGHT))
             player.rotation -= 5.0f;
-        
-        if (Input::GetKey(m_Window, GLFW_KEY_LEFT))        
+
+        if (Input::GetKey(window, GLFW_KEY_LEFT))
             player.rotation += 5.0f;
-        
+
+        //Later cycle through all entities?
+        player.UpdatePosition(player);
+
+        if (player.rotation > 360.0f)
+            player.rotation -= 360.0f;
+        if (player.rotation < 0.0f)
+            player.rotation += 360.0f;
+
+        transform = glm::translate(glm::mat4(1.0f), player.pos)
+            * glm::rotate(glm::mat4(1.0f), glm::radians(player.rotation), { 0.0f,0.0f,1.0f })
+            * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
+        for (unsigned int i = 0; i < 3; i++)
+        {
+            player.vertices[i] = transform * basevertices[i];
+        }
+        if (Collision::isColliding(player.vertices, 3, box, 4))
+            player.colour = { 1.0f,0.0f,1.0f,1.0f };
+        else
+            player.colour = { 0.7f,0.1f,0.2f,1.0f };
+
         Renderer::BeginScene(m_Camera);
         ParticleSystem::Draw((float)deltaTime);
-        Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation);
-
+        Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
+        Renderer::DrawQuad({ 0.0f,200.0f,0.0f }, { 200.0f,200.0f }, goose);
 #if 0
         Renderer::DrawQuad({ 0.5f,0.0f,0.0f }, { 100.0f,100.0f }, goose, { 1.0f,1.0f,1.0f,1.0f });
         Renderer::DrawQuad({ 105.0f,-100.0f,0.1f }, { 1000.0f,100.0f }, { 0.5f,0.5f,0.2f,1.0f });
@@ -175,27 +227,10 @@ void Application::Run()
         velocity.SetText("Velocity: " + std::to_string(player.velocity.x).substr(0,4) + "," +  std::to_string(player.velocity.y).substr(0,4));
         position.SetText("Position: " + std::to_string(player.pos.x).substr(0, 4) + "," + std::to_string(player.pos.y).substr(0, 4));
         Renderer::RenderUI(m_UIManager, m_Camera);
-        m_Window->OnUpdate();
+        window->OnUpdate();
 
-        player.pos.x += player.velocity.x;
-        player.pos.y += player.velocity.y;
-        if (player.rotation > 360.0f)
-            player.rotation -= 360.0f;
-        if (player.rotation < 0.0f)
-            player.rotation += 360.0f;
-#if 0
-        int width = (int)m_Window->GetWidth();
-        int height = (int)m_Window->GetHeight();
-        if (player.pos.x >  width / 2)
-            player.pos.x = -width / 2;
-        if (player.pos.x < -width / 2)
-            player.pos.x =  width / 2;
+        
 
-        if (player.pos.y >  height / 2)
-            player.pos.y = -height / 2;
-        if (player.pos.y < -height / 2)
-            player.pos.y =  height / 2;
-#endif
     }
 }
 

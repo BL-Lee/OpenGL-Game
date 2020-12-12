@@ -6,25 +6,17 @@
 #include "OrthoCamera.h"
 #include "Font.h"
 #include "UI/UIManager.h"
-
-struct PlayerData
-{
-	glm::vec3 pos;
-	glm::vec2 size;
-	float rotation;
-	glm::vec2 velocity;
-	float acceleration;
-};
+#include "Entity.h"
 
 class Application
 {
 private:
-	std::shared_ptr<Window> m_Window;
+	//std::shared_ptr<Window> m_Window;
 	bool IsRunning = true;
 	float m_LastFrameTime = 0.0f;
 	std::shared_ptr<OrthoCamera> m_Camera;
 	UIManager m_UIManager;
-	PlayerData player = {};
+	Entity player;
 public:
 	Application();
 	~Application();

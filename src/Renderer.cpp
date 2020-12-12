@@ -96,10 +96,12 @@ void Renderer::Init()
     s_RendererData->VertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
     s_RendererData->VertexPositions[3] = { -0.5f, 0.5f, 0.0f, 1.0f };
 
-    s_RendererData->VertexPositions[4] = {  0.0f,            1.0f, 0.0f, 1.0f };
-    s_RendererData->VertexPositions[5] = {  0.86602540378f, -0.5f, 0.0f, 1.0f };
-    s_RendererData->VertexPositions[6] = { -0.86602540378f, -0.5f, 0.0f, 1.0f };
-   
+    //s_RendererData->VertexPositions[4] = {  0.0f,            1.0f, 0.0f, 1.0f };
+    //s_RendererData->VertexPositions[5] = {  0.86602540378f, -0.5f, 0.0f, 1.0f };
+    //s_RendererData->VertexPositions[6] = { -0.86602540378f, -0.5f, 0.0f, 1.0f };
+    s_RendererData->VertexPositions[4] = { 1.0f,            0.0f, 0.0f, 1.0f };
+    s_RendererData->VertexPositions[5] = { -0.5f,  -0.86602540378f, 0.0f, 1.0f };
+    s_RendererData->VertexPositions[6] = { -0.5f, 0.86602540378f, 0.0f, 1.0f };
 }
 
 void Renderer::Shutdown()
@@ -372,20 +374,35 @@ void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, 
     s_RendererData->IndexCount += 3;
 }
 
-
+/**
+* Function to write a string of text
+* 
+* TODO:
+*      flags: bit 0 is whether to wrap or not (for now this will default to wrap at the parent size.)
+*             bit 1 is whether to 'lock' the text to the bottom left so that when it wraps it will 'push up' the previous line
+*       Will also need to wrap on words, not letters as it does right now by default
+* 
+* TODO: weird 1 pixel artifact on sides of some letters? (try e in arial)
+* Obviously this only works for languages that write left to right
+*/
 void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const std::string& text, const std::shared_ptr<Font>& f, const glm::vec4& colour)
 {
- 
+    
     std::shared_ptr<Texture> atlas = f->GetAtlas();
 
     float texIndex = GetOrAddTextureIndex(atlas);
 
     float xOffset = pos.x;
     float yOffset = pos.y;
+
+    glm::vec2 lettersize = { size.y / f->GetPtSize(), size.y / f->GetPtSize() };
+    float lineLength = 0.0f;
+
     std::string::const_iterator c;
     std::array<FontCharacterinfo,128>& chars = f->GetChars();
     for (c = text.begin(); c != text.end(); c++)
     {
+        //Check to make sure this doesnt need to be put in a new batch
         if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
             || s_RendererData->TextureSlotIndex == s_RendererData->MaxTextureSlots)
         {
@@ -393,13 +410,23 @@ void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const std
             texIndex = GetOrAddTextureIndex(atlas);
         }
         FontCharacterinfo i = chars[*c];
-        float x2 = xOffset + i.bitmapL * size.x;
-        float y2 = -yOffset - i.bitmapT * size.y;
-        float w = i.bitmapW * size.x;
-        float h = i.bitmapR * size.y;
+        
+        float x2 = xOffset + i.bitmapL * lettersize.x;
+        float y2 = -yOffset - i.bitmapT * lettersize.y;
+        float w = i.bitmapW * lettersize.x;
+        float h = i.bitmapR * lettersize.y;
 
-        xOffset += i.advanceX * size.x;
-        yOffset += i.advanceY * size.y;
+        //Wrap
+        lineLength += w;
+        if (lineLength >= size.x)
+        {
+            yOffset -= size.y;
+            xOffset = pos.x;
+            lineLength = 0.0f;
+        }
+
+        xOffset += i.advanceX * lettersize.x;
+        yOffset += i.advanceY * lettersize.y;
 
         s_RendererData->VertexBufferPtr->Position = { (x2),
                                                            -y2,
@@ -492,8 +519,7 @@ void Renderer::RenderUI(UIManager& manager, const std::shared_ptr<OrthoCamera>& 
     {
         TextBox* e = boxes[i];
         Renderer::RenderText({ e->location.x, e->location.y, e->location.z - 0.01f },
-            { e->size.y / e->font->GetPtSize(),
-            e->size.y / e->font->GetPtSize() },
+            e->size,
             e->text, e->font, e->textColour);
     }
     EndScene();
