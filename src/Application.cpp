@@ -118,14 +118,7 @@ bool Application::OnMousePress(MousePressedEvent& e)
 
 void Application::Run()
 {
-
-    glm::vec2 shape1[] = { {1.0f,1.0f},{2.0f,1.0f},{2.0f,2.0f},{1.0f,2.0f} };
-    glm::vec2 shape2[] = { {0.5f,1.0f},{4.0f,1.0f},{4.0f,2.0f},{0.5f,1.0f} };
-    if (Collision::isColliding(shape1, 4, shape2, 4))
-    {
-        std::cout << "its colliding" << std::endl;
-    }
-
+    
     std::shared_ptr<Texture> goose = std::make_shared<Texture>("res/textures/goose.png");
 
 
@@ -136,6 +129,8 @@ void Application::Run()
     m_UIManager.AddTextBox(rotation);
     m_UIManager.AddTextBox(velocity);
     m_UIManager.AddTextBox(position);
+   // TextBox CollDist({ -250.0f, 100.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
+    //m_UIManager.AddTextBox(CollDist);
 
     TextBox wrapper({ -250.0f,-150.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,0.0f }, "Ui Eleeeeeeeeeement its wrap wrap wrap wrap awrap", m_silkFont);
     m_UIManager.AddTextBox(wrapper);
@@ -143,7 +138,7 @@ void Application::Run()
     glm::vec4 basevertices[3] = { glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(-0.5f, -0.86602540378f, 0.0f, 1.0f), glm::vec4(-0.5f, 0.86602540378f, 0.0f, 1.0f) };
     glm::vec2 vertices[3] = { {0.0f,0.0f},{0.0f,0.0f},{0.0f,0.0f} };
 
-    glm::vec2 box[4] = { { -100.0f,100.0f },{100.0f,100.0f},{100.0f,300.0f},{-100.0f,300.0f} };
+   
     player.vertices = vertices;
 
 
@@ -151,6 +146,10 @@ void Application::Run()
         * glm::rotate(glm::mat4(1.0f), glm::radians(player.rotation), { 0.0f,0.0f,1.0f })
         * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
 
+    glm::mat4 transformB =  glm::scale(glm::mat4(1.0f), { 200.0f,200.0f,1.0f });
+
+    //glm::vec2 box[3] = { transformB * basevertices[0], transformB * basevertices[1],transformB * basevertices[2] };
+    glm::vec2 box[4] = { {-100.0f,100.0f},{100.0f,100.0f},{100.0f,300.0f},{-100.0f,300.0f} };
     double lastTime = glfwGetTime();
     double deltaTime = 0, nowTime = 0;
 
@@ -201,6 +200,8 @@ void Application::Run()
         if (player.rotation < 0.0f)
             player.rotation += 360.0f;
 
+        //Bit of collision tester stuff
+        //glm::vec2 test = Collision::isColliding(player.vertices, 3, box, 4);
         transform = glm::translate(glm::mat4(1.0f), player.pos)
             * glm::rotate(glm::mat4(1.0f), glm::radians(player.rotation), { 0.0f,0.0f,1.0f })
             * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
@@ -208,7 +209,7 @@ void Application::Run()
         {
             player.vertices[i] = transform * basevertices[i];
         }
-        if (Collision::isColliding(player.vertices, 3, box, 4))
+        if (Collision::isColliding(player.vertices, 3, box, 4))//test.x == 0.0f && test.y == 0.0f)
             player.colour = { 1.0f,0.0f,1.0f,1.0f };
         else
             player.colour = { 0.7f,0.1f,0.2f,1.0f };
@@ -226,6 +227,7 @@ void Application::Run()
         rotation.SetText("Rotation: "+ std::to_string(player.rotation).substr(0,4));
         velocity.SetText("Velocity: " + std::to_string(player.velocity.x).substr(0,4) + "," +  std::to_string(player.velocity.y).substr(0,4));
         position.SetText("Position: " + std::to_string(player.pos.x).substr(0, 4) + "," + std::to_string(player.pos.y).substr(0, 4));
+        //CollDist.SetText("Collision Distance: " + std::to_string(test.x * test.x + test.y * test.y).substr(0, 4));
         Renderer::RenderUI(m_UIManager, m_Camera);
         window->OnUpdate();
 

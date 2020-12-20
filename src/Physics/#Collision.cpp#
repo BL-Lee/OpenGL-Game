@@ -1,9 +1,5 @@
 #include "Collision.h"
-#include "../GLErrorCalls.h"
-#include <iostream>
-float Collision::closestDistance = closestDistance = FLT_MAX;
-glm::vec2 Collision::closestNormal = { 0.0f,0.0f };;
-int Collision::closestIndex = 0;
+
 
 /*
 * Returns the vertex closest to the direction given
@@ -42,72 +38,24 @@ glm::vec2 Collision::TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c)
 	return p;
 }
 
-void Collision::FindClosestEdge(glm::vec2 simplexVertices[], int size, Winding winding)
-{
-	//eyy global data, might return a struct later
-	closestDistance = FLT_MAX;
-    closestNormal = { 0.0f,0.0f };
-	closestIndex = 0;
-	glm::vec2 edge = { 0.0f,0.0f };
-
-	//Loop through each vertex
-	for (int i = 0; i < size; i++)
-	{
-		int j = i + 1;
-		if (j >= size) j = 0;
-		//create an edge between two consecutive vertices
-		edge = simplexVertices[j] - simplexVertices[i];
-		glm::vec2 norm = {};
-		switch (winding)
-		{
-			case Winding::Clockwise:
-			{
-				norm = { edge.y, -edge.x };
-			}break;
-
-			case Winding::CntrClockwise:
-			{
-				norm = { -edge.y, edge.x };
-			}break;
-
-			default:
-			{
-				ASSERT(0);
-				std::cout << "Invalid Winding" << std::endl;
-			}break;
-		}
-		glm::normalize(norm);
-
-		float dist = glm::dot(norm, simplexVertices[i]);
-		if (dist < closestDistance)
-		{
-			closestDistance = dist;
-			closestNormal = norm;
-			closestIndex = j;
-		}
-	}
-}
-/*
-* Returns 0 vector if not colliding
-*/
 bool Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], int sizeB)
 {
 	//Assumes center is just the center of all vertices, its okay for now
 	glm::vec2 centerA = { 0.0f,0.0f };
-	for (int i = 0; i < sizeA; i++)
+	for (uint32_t i = 0; i < sizeA; i++)
 	{
 		centerA += shapeA[i];
 	}
 	centerA /= sizeA;
 	glm::vec2 centerB = { 0.0f,0.0f };
-	for (int i = 0; i < sizeB; i++)
+	for (uint32_t i = 0; i < sizeB; i++)
 	{
 		centerB += shapeB[i];
 	}
 	centerB /= sizeB;
 
 	glm::vec2 direction = centerA - centerB;
-	glm::vec2 simplexVertices[COLLISION_MAX_WINDING];
+	glm::vec2 simplexVertices[3];
 	simplexVertices[0] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, -direction);
 	int simplexCount = 1;
 
@@ -174,8 +122,6 @@ bool Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], i
 				if (glm::dot(-a0, direction) < 0)
 				{
 					return false;
-					containsOrigin = true;
-					break;
 				}
 
 
@@ -194,48 +140,14 @@ bool Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], i
 				else
 				{
 					//origin inside both so its collided
-					//First off gotta find the closest edge 
-#if 0
-					//Some sort of polygon winding unexplained stuff?
-					float e0 = (simplexVertices[1].x - simplexVertices[0].x) *
-						(simplexVertices[1].y + simplexVertices[1].y);
-					float e1 = (simplexVertices[2].x - simplexVertices[1].x) *
-						(simplexVertices[2].y + simplexVertices[1].y);
-					float e2 = (simplexVertices[0].x - simplexVertices[2].x) *
-						(simplexVertices[0].y + simplexVertices[1].y);
-
-					Winding winding = (e0 + e1 + e2) >= 0.0f
-						? Winding::Clockwise : Winding::CntrClockwise;
-
-					glm::vec2 intersection = {};
-
-					while(simplexCount < COLLISION_MAX_WINDING - 1)
-					{
-						FindClosestEdge(simplexVertices, 3, Winding::Clockwise);
-						glm::vec2 support = getSupport(shapeA, sizeA, closestNormal) - getSupport(shapeB, sizeB, -closestNormal);
-						float dist = glm::dot(closestNormal, support);
-
-						intersection = closestNormal * closestDistance;
-						if (abs(dist - closestDistance) <= COLLISION_EPSILON)
-						{
-							return intersection;
-						}
-						else
-						{
-							simplexVertices[simplexCount++] = support;
-						}
-						if (simplexCount > sizeA || simplexCount > sizeB)
-						{
-							break;
-						}
-					}	
-#endif
+					//Now find how far away it is
+					//Repeatedly
+				  
 					return true;
-					containsOrigin = true;
 				}
+
+
 			}break;
 		}
 	}
-	//might need to change this later, if not colliding then dist is 0?
-	return true;//glm::vec2(0.0f, 0.0f);
 }
