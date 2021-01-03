@@ -244,8 +244,9 @@ void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, floa
 
     float texIndex = GetOrAddTextureIndex(tex);
 
+    //can just explicitly write out the matrix most likely
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos)
-        * glm::rotate(glm::mat4(1.0f), glm::radians(rotation), { 0.0f,0.0f,1.0f })
+        * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f,0.0f,1.0f })
         * glm::scale(glm::mat4(1.0f), { size.x,size.y,1.0f });
 
     s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[0];
@@ -345,7 +346,7 @@ void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, 
     float texIndex = GetOrAddTextureIndex(tex);
 
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos)
-        * glm::rotate(glm::mat4(1.0f), glm::radians(rotation), { 0.0f,0.0f,1.0f })
+        * glm::rotate(glm::mat4(1.0f),rotation, { 0.0f,0.0f,1.0f })
         * glm::scale(glm::mat4(1.0f), { size.x,size.y,1.0f });
 
     s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[4];
@@ -372,6 +373,19 @@ void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, 
     s_RendererData->IndexOffset += 3;
 
     s_RendererData->IndexCount += 3;
+}
+
+void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, float width, const glm::vec4& colour)
+{
+    glm::vec3 line = start - end;
+    if (start.x > end.x)
+    {
+        line = end - start;
+    } 
+    float lineLength = glm::length(start-end);
+    float angle = glm::acos(glm::dot(glm::normalize(line), { 0.0,1.0f,0.0 }));
+   
+    DrawRotatedQuad((start+end)/2.0f, { width, lineLength },  angle, colour);
 }
 
 /**

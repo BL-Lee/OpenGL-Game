@@ -90,7 +90,7 @@ void Collision::FindClosestEdge(glm::vec2 simplexVertices[], int size, Winding w
 /*
 * Returns 0 vector if not colliding
 */
-bool Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], int sizeB)
+glm::vec2 Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], int sizeB)
 {
 	//Assumes center is just the center of all vertices, its okay for now
 	glm::vec2 centerA = { 0.0f,0.0f };
@@ -173,9 +173,7 @@ bool Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], i
 				//if they arent then we havent passed the origin, and we will never get an intersection
 				if (glm::dot(-a0, direction) < 0)
 				{
-					return false;
-					containsOrigin = true;
-					break;
+					return glm::vec2(0.0f, 0.0f);
 				}
 
 
@@ -195,7 +193,6 @@ bool Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], i
 				{
 					//origin inside both so its collided
 					//First off gotta find the closest edge 
-#if 0
 					//Some sort of polygon winding unexplained stuff?
 					float e0 = (simplexVertices[1].x - simplexVertices[0].x) *
 						(simplexVertices[1].y + simplexVertices[1].y);
@@ -211,7 +208,7 @@ bool Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], i
 
 					while(simplexCount < COLLISION_MAX_WINDING - 1)
 					{
-						FindClosestEdge(simplexVertices, 3, Winding::Clockwise);
+						FindClosestEdge(simplexVertices, simplexCount, Winding::Clockwise);
 						glm::vec2 support = getSupport(shapeA, sizeA, closestNormal) - getSupport(shapeB, sizeB, -closestNormal);
 						float dist = glm::dot(closestNormal, support);
 
@@ -229,13 +226,11 @@ bool Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], i
 							break;
 						}
 					}	
-#endif
-					return true;
-					containsOrigin = true;
+					return intersection;
 				}
 			}break;
 		}
 	}
 	//might need to change this later, if not colliding then dist is 0?
-	return true;//glm::vec2(0.0f, 0.0f);
+	return glm::vec2(0.0f, 0.0f);
 }

@@ -42,5 +42,5 @@ private:
 	static glm::vec2 TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c);
 	static void FindClosestEdge(glm::vec2 simplexVertices[], int size, Winding winding);
 public:
-	static bool isColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
+	static glm::vec2 isColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
 };

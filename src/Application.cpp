@@ -26,6 +26,7 @@ Application::Application()
     m_Camera = std::make_shared<OrthoCamera>((float)props.Width, (float)props.Height);
     Renderer::Init();
 
+
     Random::Init();
     //set base particle if you want then init
     Particle p =
@@ -37,7 +38,7 @@ Application::Application()
     { 0.9f, 0.3f, 0.15f, 1.0f },//endcolor
     { 0.0f, 0.0f },//speed
     90.0f,//Random::Float() * 360.0f, //rotation
-    Random::Float() * 400.0f, //spin speed
+    Random::Float() * 2.0f, //spin speed
     0.5f, //lifetime
     0.0f, //0
     false, //isactive
@@ -129,8 +130,8 @@ void Application::Run()
     m_UIManager.AddTextBox(rotation);
     m_UIManager.AddTextBox(velocity);
     m_UIManager.AddTextBox(position);
-   // TextBox CollDist({ -250.0f, 100.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
-    //m_UIManager.AddTextBox(CollDist);
+    TextBox CollDist({ -250.0f, 100.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
+    m_UIManager.AddTextBox(CollDist);
 
     TextBox wrapper({ -250.0f,-150.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,0.0f }, "Ui Eleeeeeeeeeement its wrap wrap wrap wrap awrap", m_silkFont);
     m_UIManager.AddTextBox(wrapper);
@@ -143,7 +144,7 @@ void Application::Run()
 
 
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), player.pos)
-        * glm::rotate(glm::mat4(1.0f), glm::radians(player.rotation), { 0.0f,0.0f,1.0f })
+        * glm::rotate(glm::mat4(1.0f), (player.rotation), { 0.0f,0.0f,1.0f })
         * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
 
     glm::mat4 transformB =  glm::scale(glm::mat4(1.0f), { 200.0f,200.0f,1.0f });
@@ -171,15 +172,15 @@ void Application::Run()
 
         if (Input::GetKey(window, GLFW_KEY_UP))
         {
-            glm::vec2 direction = { cos(glm::radians(player.rotation)), sin(glm::radians(player.rotation)) };
+            glm::vec2 direction = { cos(player.rotation), sin(player.rotation) };
 
             Particle& p = ParticleSystem::GetbaseParticle();
             p.Pos = player.pos;
-            p.Rotation = player.rotation + 90.0f;
+            p.Rotation = player.rotation;
             p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
             ParticleSystem::Add(1);
 
-            player.Accelerate(player, glm::radians(player.rotation));
+            player.Accelerate(player, player.rotation);
 
         }
         else
@@ -187,37 +188,40 @@ void Application::Run()
             player.velocity = { 0.0f,0.0f };
         }
         if (Input::GetKey(window, GLFW_KEY_RIGHT))
-            player.rotation -= 5.0f;
+            player.rotation -= glm::radians(5.0f);
 
         if (Input::GetKey(window, GLFW_KEY_LEFT))
-            player.rotation += 5.0f;
+            player.rotation += glm::radians(5.0f);
 
         //Later cycle through all entities?
         player.UpdatePosition(player);
 
-        if (player.rotation > 360.0f)
-            player.rotation -= 360.0f;
-        if (player.rotation < 0.0f)
-            player.rotation += 360.0f;
+        if (player.rotation > glm::two_pi<float>())
+            player.rotation -= glm::two_pi<float>();
+        if (player.rotation < glm::two_pi<float>())
+            player.rotation += glm::two_pi<float>();
 
         //Bit of collision tester stuff
-        //glm::vec2 test = Collision::isColliding(player.vertices, 3, box, 4);
+        glm::vec2 test = Collision::isColliding(player.vertices, 3, box, 4);
         transform = glm::translate(glm::mat4(1.0f), player.pos)
-            * glm::rotate(glm::mat4(1.0f), glm::radians(player.rotation), { 0.0f,0.0f,1.0f })
+            * glm::rotate(glm::mat4(1.0f), player.rotation, { 0.0f,0.0f,1.0f })
             * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
         for (unsigned int i = 0; i < 3; i++)
         {
             player.vertices[i] = transform * basevertices[i];
         }
-        if (Collision::isColliding(player.vertices, 3, box, 4))//test.x == 0.0f && test.y == 0.0f)
-            player.colour = { 1.0f,0.0f,1.0f,1.0f };
-        else
+        //not colliding
+        if (test.x == 0.0f && test.y == 0.0f)
             player.colour = { 0.7f,0.1f,0.2f,1.0f };
+        //colliding
+        else
+            player.colour = { 1.0f,0.0f,1.0f,1.0f }; 
 
         Renderer::BeginScene(m_Camera);
         ParticleSystem::Draw((float)deltaTime);
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
         Renderer::DrawQuad({ 0.0f,200.0f,0.0f }, { 200.0f,200.0f }, goose);
+        Renderer::DrawLine(player.pos, { Input::GetMousePosOpenGLCoords(window,m_Camera),player.pos.z });
 #if 0
         Renderer::DrawQuad({ 0.5f,0.0f,0.0f }, { 100.0f,100.0f }, goose, { 1.0f,1.0f,1.0f,1.0f });
         Renderer::DrawQuad({ 105.0f,-100.0f,0.1f }, { 1000.0f,100.0f }, { 0.5f,0.5f,0.2f,1.0f });
@@ -227,7 +231,7 @@ void Application::Run()
         rotation.SetText("Rotation: "+ std::to_string(player.rotation).substr(0,4));
         velocity.SetText("Velocity: " + std::to_string(player.velocity.x).substr(0,4) + "," +  std::to_string(player.velocity.y).substr(0,4));
         position.SetText("Position: " + std::to_string(player.pos.x).substr(0, 4) + "," + std::to_string(player.pos.y).substr(0, 4));
-        //CollDist.SetText("Collision Distance: " + std::to_string(test.x * test.x + test.y * test.y).substr(0, 4));
+        CollDist.SetText("Collision Distance: " + std::to_string(test.x).substr(0, 4) + "," + std::to_string(test.y).substr(0,4));
         Renderer::RenderUI(m_UIManager, m_Camera);
         window->OnUpdate();
 
