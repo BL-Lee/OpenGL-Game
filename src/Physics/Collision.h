@@ -29,7 +29,7 @@ private:
 	static float closestDistance;
 	static glm::vec2 closestNormal;
 	static int closestIndex;
-	static constexpr float COLLISION_EPSILON = 0.1f;
+	static constexpr float COLLISION_EPSILON = 1.0f;
 	static const int COLLISION_MAX_WINDING = 32;
 	enum Winding
 	{
@@ -40,7 +40,8 @@ private:
 	static int sizeB;
 	static glm::vec2 getSupport(glm::vec2 shape[], int size, glm::vec2 direction);
 	static glm::vec2 TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c);
-	static void FindClosestEdge(glm::vec2 simplexVertices[], int size, Winding winding);
+	static void FindClosestPoint(glm::vec2 simplexVertices[], int size, Winding winding);
+	static glm::vec2 MinimumDistance(glm::vec2 v, glm::vec2 w, glm::vec2 p);
 public:
 	static glm::vec2 isColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
 };

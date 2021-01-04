@@ -42,7 +42,42 @@ glm::vec2 Collision::TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c)
 	return p;
 }
 
-void Collision::FindClosestEdge(glm::vec2 simplexVertices[], int size, Winding winding)
+glm::vec2 Collision::MinimumDistance(glm::vec2 v, glm::vec2 w, glm::vec2 p)
+{
+#if 0
+	if (w.x == v.x && w.y == v.y)
+	{
+	//its the same point.
+	}
+	//First check if the closest point on the line vw is in the middle somewhere,
+	//This means that for target point T the dot product Tp and vw is 0
+	float numerator = -(v.x - p.x) * (w.x - v.x) + (v.y - p.y) * (w.y - v.y);
+	float denom = (w.x - v.x)*(w.x - v.x) + (w.y - v.y)*(w.y - v.y);
+	float temp = numerator / denom;
+	//if temp is between 0 and 1, then the closest point is in the middle
+	if (0.0f <= temp && temp <= 1)
+	{
+
+	}
+	//otherwise its the smaller distance between the points
+	else
+	{
+
+	}
+#endif
+	// Return minimum distance between line segment vw and point p
+	const float l2 = glm::dot(w - v, w - v);  // i.e. |w-v|^2 -  avoid a sqrt
+	if (l2 == 0.0f) return v;   // v == w case
+	// Consider the line extending the segment, parameterized as v + t (w - v).
+	// We find projection of point p onto the line. 
+	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+	// We clamp t from [0,1] to handle points outside the segment vw.
+	const float t = glm::max(0.0f, glm::min(1.0f, dot(p - v, w - v) / l2));
+	const glm::vec2 projection = v + t * (w - v);  // Projection falls on the segment
+	return projection;
+}
+
+void Collision::FindClosestPoint(glm::vec2 simplexVertices[], int size, Winding winding)
 {
 	//eyy global data, might return a struct later
 	closestDistance = FLT_MAX;
@@ -76,14 +111,15 @@ void Collision::FindClosestEdge(glm::vec2 simplexVertices[], int size, Winding w
 				std::cout << "Invalid Winding" << std::endl;
 			}break;
 		}
-		glm::normalize(norm);
+		norm = glm::normalize(norm);
 
+		//this is also a projection, just norm is normalized
 		float dist = glm::dot(norm, simplexVertices[i]);
 		if (dist < closestDistance)
 		{
 			closestDistance = dist;
-			closestNormal = norm;
 			closestIndex = j;
+			closestNormal = norm;
 		}
 	}
 }
@@ -175,19 +211,22 @@ glm::vec2 Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 				{
 					return glm::vec2(0.0f, 0.0f);
 				}
-
-
 				if (glm::dot(abPerp, a0) > 0)
 				{
 					//origin is outside ab, get rid of c and go towards abPerp
 					direction = abPerp;
-					simplexVertices[0] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, -direction);
+					//tester for now, remove 0 and add new support to index 2
+					glm::vec2 temp = simplexVertices[1];
+					simplexVertices[1] = simplexVertices[2];
+					simplexVertices[0] = temp;
+					simplexVertices[2] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, -direction);
 				}
 				else if (glm::dot(acPerp, a0) > 0)
 				{
 					//origin outside ac, get rid of b
 					direction = acPerp;
-					simplexVertices[1] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, -direction);
+					simplexVertices[1] = simplexVertices[2];
+					simplexVertices[2] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, -direction);
 				}
 				else
 				{
@@ -195,36 +234,40 @@ glm::vec2 Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 					//First off gotta find the closest edge 
 					//Some sort of polygon winding unexplained stuff?
 					float e0 = (simplexVertices[1].x - simplexVertices[0].x) *
-						(simplexVertices[1].y + simplexVertices[1].y);
+						(simplexVertices[1].y + simplexVertices[0].y);
 					float e1 = (simplexVertices[2].x - simplexVertices[1].x) *
 						(simplexVertices[2].y + simplexVertices[1].y);
 					float e2 = (simplexVertices[0].x - simplexVertices[2].x) *
-						(simplexVertices[0].y + simplexVertices[1].y);
+						(simplexVertices[0].y + simplexVertices[2].y);
 
 					Winding winding = (e0 + e1 + e2) >= 0.0f
 						? Winding::Clockwise : Winding::CntrClockwise;
 
 					glm::vec2 intersection = {};
 
-					while(simplexCount < COLLISION_MAX_WINDING - 1)
+					while(simplexCount < COLLISION_MAX_WINDING - 2)
 					{
-						FindClosestEdge(simplexVertices, simplexCount, Winding::Clockwise);
+						FindClosestPoint(simplexVertices, simplexCount, Winding::Clockwise);
 						glm::vec2 support = getSupport(shapeA, sizeA, closestNormal) - getSupport(shapeB, sizeB, -closestNormal);
-						float dist = glm::dot(closestNormal, support);
+						float dist = glm::dot(closestNormal, support);//actually a projection, but since normal is normalized you can dot..
+						
 
-						intersection = closestNormal * closestDistance;
+						intersection = closestNormal * dist;
 						if (abs(dist - closestDistance) <= COLLISION_EPSILON)
 						{
-							return intersection;
+							return intersection;	
 						}
 						else
 						{
-							simplexVertices[simplexCount++] = support;
+							//insert
+							for (int j = simplexCount; j > closestIndex; j--)
+							{
+								simplexVertices[j] = simplexVertices[j - 1];
+							}
+							simplexVertices[closestIndex] = support;
+							simplexCount++;
 						}
-						if (simplexCount > sizeA || simplexCount > sizeB)
-						{
-							break;
-						}
+						
 					}	
 					return intersection;
 				}

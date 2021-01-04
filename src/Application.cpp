@@ -196,7 +196,7 @@ void Application::Run()
         //Later cycle through all entities?
         player.UpdatePosition(player);
 
-        if (player.rotation > glm::two_pi<float>())
+        if (player.rotation > glm::two_pi<float>()) //really dont like this, add math constant header with pi as a float so i dont need to do this <float>() crap
             player.rotation -= glm::two_pi<float>();
         if (player.rotation < glm::two_pi<float>())
             player.rotation += glm::two_pi<float>();
@@ -215,13 +215,17 @@ void Application::Run()
             player.colour = { 0.7f,0.1f,0.2f,1.0f };
         //colliding
         else
-            player.colour = { 1.0f,0.0f,1.0f,1.0f }; 
-
+        {
+            player.colour = { 1.0f,0.0f,1.0f,1.0f };
+            player.pos.x -= test.x;
+            player.pos.y -= test.y;
+        }
         Renderer::BeginScene(m_Camera);
         ParticleSystem::Draw((float)deltaTime);
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
         Renderer::DrawQuad({ 0.0f,200.0f,0.0f }, { 200.0f,200.0f }, goose);
         Renderer::DrawLine(player.pos, { Input::GetMousePosOpenGLCoords(window,m_Camera),player.pos.z });
+        Renderer::DrawLine(player.pos, { test.x + player.pos.x, test.y + player.pos.y ,player.pos.z });
 #if 0
         Renderer::DrawQuad({ 0.5f,0.0f,0.0f }, { 100.0f,100.0f }, goose, { 1.0f,1.0f,1.0f,1.0f });
         Renderer::DrawQuad({ 105.0f,-100.0f,0.1f }, { 1000.0f,100.0f }, { 0.5f,0.5f,0.2f,1.0f });
