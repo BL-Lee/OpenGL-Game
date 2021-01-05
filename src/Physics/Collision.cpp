@@ -42,41 +42,6 @@ glm::vec2 Collision::TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c)
 	return p;
 }
 
-glm::vec2 Collision::MinimumDistance(glm::vec2 v, glm::vec2 w, glm::vec2 p)
-{
-#if 0
-	if (w.x == v.x && w.y == v.y)
-	{
-	//its the same point.
-	}
-	//First check if the closest point on the line vw is in the middle somewhere,
-	//This means that for target point T the dot product Tp and vw is 0
-	float numerator = -(v.x - p.x) * (w.x - v.x) + (v.y - p.y) * (w.y - v.y);
-	float denom = (w.x - v.x)*(w.x - v.x) + (w.y - v.y)*(w.y - v.y);
-	float temp = numerator / denom;
-	//if temp is between 0 and 1, then the closest point is in the middle
-	if (0.0f <= temp && temp <= 1)
-	{
-
-	}
-	//otherwise its the smaller distance between the points
-	else
-	{
-
-	}
-#endif
-	// Return minimum distance between line segment vw and point p
-	const float l2 = glm::dot(w - v, w - v);  // i.e. |w-v|^2 -  avoid a sqrt
-	if (l2 == 0.0f) return v;   // v == w case
-	// Consider the line extending the segment, parameterized as v + t (w - v).
-	// We find projection of point p onto the line. 
-	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
-	// We clamp t from [0,1] to handle points outside the segment vw.
-	const float t = glm::max(0.0f, glm::min(1.0f, dot(p - v, w - v) / l2));
-	const glm::vec2 projection = v + t * (w - v);  // Projection falls on the segment
-	return projection;
-}
-
 void Collision::FindClosestPoint(glm::vec2 simplexVertices[], int size, Winding winding)
 {
 	//eyy global data, might return a struct later
@@ -126,7 +91,7 @@ void Collision::FindClosestPoint(glm::vec2 simplexVertices[], int size, Winding 
 /*
 * Returns 0 vector if not colliding
 */
-glm::vec2 Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], int sizeB)
+glm::vec2 Collision::IsColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB[], int sizeB)
 {
 	//Assumes center is just the center of all vertices, its okay for now
 	glm::vec2 centerA = { 0.0f,0.0f };
@@ -167,32 +132,12 @@ glm::vec2 Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 			case 2:
 			{
 				//For the third vertex we should add it perpendicular to the line we made with the first two vertices towards the origin
-#if 0
-				glm::vec2 clockwise = { direction.y, -direction.x };
-				
-				float sqrDistClockwise = glm::dot(clockwise + simplexVertices[0], clockwise + simplexVertices[0]);
-				float sqrDistCntrClockwise = glm::dot((-clockwise) + simplexVertices[0], (-clockwise) + simplexVertices[0]);
-
-				if (sqrDistClockwise < sqrDistCntrClockwise)
-					direction = clockwise;
-				else
-					direction = -clockwise;
-				
-				
-				simplexVertices[2] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, direction * -1.0f);
-#endif
 				direction = TripleProduct(simplexVertices[1] - simplexVertices[0], -simplexVertices[0], simplexVertices[1] - simplexVertices[0]);
 				simplexVertices[2] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, -direction);
 				simplexCount++;
 			}break;
 			case 3:
 			{
-				//First check if it contains the origin
-
-				//Check if the normal of the first two vertices (pointing away from the third vertex)
-				//points in the same direction as the third vertex towards the origin
-
-				
 				//For readability
 				glm::vec2 a = simplexVertices[2];
 				glm::vec2 b = simplexVertices[1];
@@ -251,7 +196,6 @@ glm::vec2 Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 						glm::vec2 support = getSupport(shapeA, sizeA, closestNormal) - getSupport(shapeB, sizeB, -closestNormal);
 						float dist = glm::dot(closestNormal, support);//actually a projection, but since normal is normalized you can dot..
 						
-
 						intersection = closestNormal * dist;
 						if (abs(dist - closestDistance) <= COLLISION_EPSILON)
 						{
@@ -276,4 +220,32 @@ glm::vec2 Collision::isColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 	}
 	//might need to change this later, if not colliding then dist is 0?
 	return glm::vec2(0.0f, 0.0f);
+}
+
+void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 normal)
+{
+	//relative velocity
+	glm::vec2 relV = B.velocity - A.velocity;
+
+	//projects the velocity along the normal
+	//Assumes normal is unit vector
+	float velAlongNormal = glm::dot(relV, normal);
+
+	//only calculate impulse if they are moving apart
+	if (velAlongNormal > 0.0f)
+		return;
+
+	float usedRestitution = glm::min(A.restitution, B.restitution);
+	float j = -(1 - usedRestitution) * velAlongNormal;
+	j /= A.inverseMass + B.inverseMass;
+	//again projection, normal is unit vector
+	glm::vec2 impulse = j * normal;
+
+	//can probably optimise with inverse mass somehow
+	float massSum = A.mass + B.mass;
+	float ratio = A.mass / massSum;
+	A.velocity -= ratio * impulse;
+
+	ratio = B.mass / massSum;
+	B.velocity += ratio * impulse;
 }

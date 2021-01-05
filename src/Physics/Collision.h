@@ -1,9 +1,9 @@
 #pragma once
 #include "glm/glm.hpp"
+#include "../Entity.h"
 /**
 * TODO(Ben): Broad phase collision detection, probably AABB
-* Narrow phase collision is calculated using the Gilbert-Johnsohn-Keerthi (GJK) collision detection
-* Only works for convex shapes
+*			 maybe some spatial tree to optimize broad phase
 */
 
 /**
@@ -17,11 +17,12 @@
 *	2. Create 'simplexes' (In 2d it will just be a triangle) that are made from the vertices of the sum,
 *		if the triangle contains the origin we stop and say it's colliding
 *		if not we make a new simplex in the opposite direction until we're sure the origin isnt contained
+*	3. If they are colliding (contains origin), the closest point from the origin to the hull of the sum is the
+*		penetration vector. ie how much it is colliding by
 */
 
 /*
-* Main colliding function for narrow phase,
-* Assumes 2D, and that 
+* 
 */
 class Collision
 {
@@ -41,7 +42,7 @@ private:
 	static glm::vec2 getSupport(glm::vec2 shape[], int size, glm::vec2 direction);
 	static glm::vec2 TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c);
 	static void FindClosestPoint(glm::vec2 simplexVertices[], int size, Winding winding);
-	static glm::vec2 MinimumDistance(glm::vec2 v, glm::vec2 w, glm::vec2 p);
 public:
-	static glm::vec2 isColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
+	static glm::vec2 IsColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
+	static void ResolveCollision(Entity& A, Entity& B, glm::vec2 normal);
 };
