@@ -47,14 +47,15 @@ Application::Application()
     ParticleSystem::Init(999);
     player.pos = { 0.0f,0.0f,-0.1f };
     player.size = { 20.0f,10.0f };
-    player.acceleration = 0.1f;
+    player.acceleration = 200.0f;
     player.colour = { 0.7f,0.1f,0.2f,1.0f };
     player.Accelerate = AccelerateEntityForward;
     player.UpdatePosition = UpdatePosition;
     player.mass = 1.0f;
     player.inverseMass = 1.0f;
-    player.restitution = -1.0f;
-
+    player.restitution = 0.0f;
+    player.gravityStrength = 9.81f * 10;
+    player.gravityDirection = { 0.0f, -1.0f };
 }
 void Application::Shutdown()
 {
@@ -158,9 +159,9 @@ void Application::Run()
     gooseBox.size = { 200.0f,200.0f };
     gooseBox.rotation = 0.0f;
     gooseBox.vertexCount = 4;
-    gooseBox.mass = 30.0f;
-    gooseBox.inverseMass = 1/30.0f;
-    gooseBox.restitution = 0.0f;
+    gooseBox.mass = 0.0f;
+    gooseBox.inverseMass = 0.0f;
+    gooseBox.restitution = 1.0f;
     gooseBox.UpdatePosition = UpdatePosition;
     glm::mat4 transformB = glm::translate(glm::mat4(1.0f), gooseBox.pos)
         * glm::rotate(glm::mat4(1.0f), (gooseBox.rotation), { 0.0f,0.0f,1.0f })
@@ -195,7 +196,7 @@ void Application::Run()
             p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
             ParticleSystem::Add(1);
 
-            player.Accelerate(player, player.rotation);
+            player.Accelerate(player, player.rotation, deltaTime);
         }
         else
         {
@@ -206,10 +207,16 @@ void Application::Run()
 
         if (Input::GetKey(window, GLFW_KEY_LEFT))
             player.rotation += glm::radians(5.0f);
+        if (Input::GetMouseButton(window, GLFW_MOUSE_BUTTON_1))
+        {
+            gooseBox.pos.x = Input::GetMouseXPos(window);
+            gooseBox.pos.y = Input::GetMouseYPos(window);
+            gooseBox.velocity = { 0.0f,0.0f };
+        }
 
         //Later cycle through all entities?
-        player.UpdatePosition(player);
-        gooseBox.UpdatePosition(gooseBox);
+        player.UpdatePosition(player, deltaTime);
+        gooseBox.UpdatePosition(gooseBox, deltaTime);
 
 
         if (player.rotation > glm::two_pi<float>()) //really dont like this, add math constant header with pi as a float so i dont need to do this <float>() crap

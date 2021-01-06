@@ -236,16 +236,18 @@ void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 normal)
 		return;
 
 	float usedRestitution = glm::min(A.restitution, B.restitution);
-	float j = -(1 - usedRestitution) * velAlongNormal;
+	float j = -(1 + usedRestitution) * velAlongNormal;
 	j /= A.inverseMass + B.inverseMass;
 	//again projection, normal is unit vector
 	glm::vec2 impulse = j * normal;
-
-	//can probably optimise with inverse mass somehow
+#if 0
 	float massSum = A.mass + B.mass;
-	float ratio = A.mass / massSum;
+	float ratio = B.mass / massSum;
 	A.velocity -= ratio * impulse;
 
-	ratio = B.mass / massSum;
+	ratio = A.mass / massSum;
 	B.velocity += ratio * impulse;
+#endif
+	A.velocity -= A.inverseMass * impulse;
+	B.velocity += B.inverseMass * impulse;
 }

@@ -19,15 +19,17 @@ struct Entity
 	float restitution; //bounciness
 	glm::vec2 vertices[MAX_RIGIDBODY_HULL];
 	int vertexCount;
+	glm::vec2 gravityDirection;
+	float gravityStrength; //just use 0 for disabling
 
 	//Movement
-	void (*Accelerate)(Entity& e, float rot);
-	void (*UpdatePosition)(Entity& e);
+	void (*Accelerate)(Entity& e, float rot, float deltaTime);
+	void (*UpdatePosition)(Entity& e, float deltaTime);
 
 	//Visuals
 	glm::vec4 colour;
 
 };
 void SetEntityMass(Entity& e, float m);
-void AccelerateEntityForward(Entity& e, float rotation);
-void UpdatePosition(Entity& e);
+void AccelerateEntityForward(Entity& e, float rotation, float deltaTime);
+void UpdatePosition(Entity& e, float deltaTime);
