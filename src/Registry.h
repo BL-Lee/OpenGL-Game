@@ -8,6 +8,7 @@ public:
 	static uint32_t idCounter;
 	static Entity* registry[MAX_ENTITIES_IN_REGISTRY];
 	static uint8_t validityArray[MAX_ENTITIES_IN_REGISTRY];
+	static std::vector<uint32_t> validIndices;
 	static float MAX_LOAD_FACTOR;
 	static uint32_t entityCount;
 	//Keep a dynamic data structure that contains the indices of all valid entities?
@@ -18,4 +19,6 @@ public:
 	//use linear probing?
 	static uint32_t addEntity(Entity* value);
 	static void deleteEntity(uint32_t key);
+private:
+	static uint32_t indexOf(uint32_t key);
 };

@@ -115,7 +115,7 @@ bool Application::OnMousePress(MousePressedEvent& e)
 void Application::Run()
 {
     
-    std::shared_ptr<Texture> goose = std::make_shared<Texture>("res/textures/goose.png");
+    std::shared_ptr<Texture> outlineTex = std::make_shared<Texture>("res/textures/InvertexOutline.png");
 
 
     std::shared_ptr<Font> m_silkFont = std::make_shared<Font>();
@@ -155,21 +155,20 @@ void Application::Run()
                          { 0.5f, -0.5f, 0.0f, 1.0f },
                          { 0.5f,  0.5f, 0.0f, 1.0f },
                          { -0.5f, 0.5f, 0.0f, 1.0f } };
-    Entity gooseBox = {};
-    gooseBox.pos = { 0.0f,200.0f,0.0f };
-    gooseBox.size = { 200.0f,200.0f };
-    gooseBox.rotation = 0.0f;
-    gooseBox.vertexCount = 4;
-    gooseBox.mass = 0.0f;
-    gooseBox.inverseMass = 0.0f;
-    gooseBox.restitution = 1.0f;
-    gooseBox.UpdatePosition = UpdatePosition;
-    glm::mat4 transformB = glm::translate(glm::mat4(1.0f), gooseBox.pos)
-        * glm::rotate(glm::mat4(1.0f), (gooseBox.rotation), { 0.0f,0.0f,1.0f })
-        * glm::scale(glm::mat4(1.0f), { gooseBox.size.x, gooseBox.size.y,1.0f });
+    Entity wallBottom = {};
+    wallBottom.pos = { 0.0f,-300.0f,0.0f };
+    wallBottom.size = { 1000.0f,5.0f };
+    wallBottom.rotation = 0.0f;
+    wallBottom.vertexCount = 4;
+    wallBottom.mass = 0.0f;
+    wallBottom.inverseMass = 0.0f;
+    wallBottom.restitution = 1.0f; //TODO: streamline this transformation matrix. Maybe just calculate on the fly
+    glm::mat4 transformB = glm::translate(glm::mat4(1.0f), wallBottom.pos)
+        * glm::rotate(glm::mat4(1.0f), (wallBottom.rotation), { 0.0f,0.0f,1.0f })
+        * glm::scale(glm::mat4(1.0f), { wallBottom.size.x, wallBottom.size.y,1.0f });
 
     Registry::addEntity(&player);
-    Registry::addEntity(&gooseBox);
+    Registry::addEntity(&wallBottom);
 
     double lastTime = glfwGetTime();
     double deltaTime = 0, nowTime = 0;
@@ -189,7 +188,6 @@ void Application::Run()
             p.Pos = Input::GetMousePosOpenGLCoords(window, m_Camera);
             ParticleSystem::Add(1);
         }
-
         if (Input::GetKey(window, GLFW_KEY_UP))
         {
             glm::vec2 direction = { cos(player.rotation), sin(player.rotation) };
@@ -202,30 +200,24 @@ void Application::Run()
 
             player.Accelerate(&player, player.rotation, deltaTime);
         }
-        else
-        {
-           // player.velocity = { 0.0f,0.0f };
-        }
         if (Input::GetKey(window, GLFW_KEY_RIGHT))
             player.rotation -= glm::radians(5.0f);
-
         if (Input::GetKey(window, GLFW_KEY_LEFT))
             player.rotation += glm::radians(5.0f);
         if (Input::GetMouseButton(window, GLFW_MOUSE_BUTTON_1))
         {
-            gooseBox.pos.x = Input::GetMouseXPos(window);
-            gooseBox.pos.y = Input::GetMouseYPos(window);
-            gooseBox.velocity = { 0.0f,0.0f };
+            wallBottom.pos.x = Input::GetMouseXPos(window);
+            wallBottom.pos.y = Input::GetMouseYPos(window);
+            wallBottom.velocity = { 0.0f,0.0f };
         }
 
-        for (int i = 0; i < 256; i++)
+        for (int i = 0; i < Registry::validIndices.size(); i++)
         {
             Entity* e = Registry::getEntityByKey(i);
             if (e)
-                e->UpdatePosition(e, deltaTime);
+                if (e->mass)
+                    e->UpdatePosition(e, deltaTime); //no mass means its a wall, so it doesnt move
         }
-        //player.UpdatePosition(player, deltaTime);
-        //gooseBox.UpdatePosition(gooseBox, deltaTime);
 
 
         if (player.rotation > glm::two_pi<float>()) //really dont like this, add math constant header with pi as a float so i dont need to do this <float>() crap
@@ -237,18 +229,18 @@ void Application::Run()
         transform = glm::translate(glm::mat4(1.0f), player.pos)
             * glm::rotate(glm::mat4(1.0f), player.rotation, { 0.0f,0.0f,1.0f })
             * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
-        transformB = glm::translate(glm::mat4(1.0f), gooseBox.pos)
-            * glm::rotate(glm::mat4(1.0f), (gooseBox.rotation), { 0.0f,0.0f,1.0f })
-            * glm::scale(glm::mat4(1.0f), { gooseBox.size.x, gooseBox.size.y,1.0f });
+        transformB = glm::translate(glm::mat4(1.0f), wallBottom.pos)
+            * glm::rotate(glm::mat4(1.0f), (wallBottom.rotation), { 0.0f,0.0f,1.0f })
+            * glm::scale(glm::mat4(1.0f), { wallBottom.size.x, wallBottom.size.y,1.0f });
         for (unsigned int i = 0; i < player.vertexCount; i++)
         {
             player.vertices[i] = transform * basevertices[i];
         }
-        for (unsigned int i = 0; i < gooseBox.vertexCount; i++)
+        for (unsigned int i = 0; i < wallBottom.vertexCount; i++)
         {
-            gooseBox.vertices[i] = transformB * box[i];
+            wallBottom.vertices[i] = transformB * box[i];
         }
-        glm::vec2 test = Collision::IsColliding(player.vertices, player.vertexCount, gooseBox.vertices, gooseBox.vertexCount);
+        glm::vec2 test = Collision::IsColliding(player.vertices, player.vertexCount, wallBottom.vertices, wallBottom.vertexCount);
         //not colliding
         if (test.x == 0.0f && test.y == 0.0f)
             player.colour = { 0.7f,0.1f,0.2f,1.0f };
@@ -256,12 +248,12 @@ void Application::Run()
         else
         {
             player.colour = { 1.0f,0.0f,1.0f,1.0f };
-            Collision::ResolveCollision(player, gooseBox, glm::normalize(test));
+            Collision::ResolveCollision(player, wallBottom, glm::normalize(test));
         }
         Renderer::BeginScene(m_Camera);
         ParticleSystem::Draw((float)deltaTime);
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
-        Renderer::DrawQuad(gooseBox.pos, gooseBox.size, goose);
+        Renderer::DrawQuad(wallBottom.pos, wallBottom.size);
         Renderer::DrawLine(player.pos, { test.x + player.pos.x, test.y + player.pos.y ,player.pos.z });
 
         Renderer::EndScene();

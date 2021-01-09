@@ -5,6 +5,7 @@ uint32_t Registry::idCounter = 0;
 Entity* Registry::registry[MAX_ENTITIES_IN_REGISTRY] = { 0 };
 uint8_t Registry::validityArray[MAX_ENTITIES_IN_REGISTRY] = { 0 };
 uint32_t Registry::entityCount = 0;
+std::vector<uint32_t> Registry::validIndices;
 float Registry::MAX_LOAD_FACTOR = 0.75f;
 
 uint32_t Registry::addEntity(Entity* e)
@@ -13,14 +14,15 @@ uint32_t Registry::addEntity(Entity* e)
 	{
 		//resize
 	}
-	while (validityArray[idCounter % MAX_ENTITIES_IN_REGISTRY])
+	while (validityArray[idCounter])
 	{
-		idCounter++;
+		idCounter = (idCounter + 1) % MAX_ENTITIES_IN_REGISTRY;
 	}
-	registry[idCounter % MAX_ENTITIES_IN_REGISTRY] = e;
-	validityArray[idCounter % MAX_ENTITIES_IN_REGISTRY] = 1;
+	registry[idCounter] = e;
+	validityArray[idCounter] = 1;
 	entityCount++;
-	return idCounter % MAX_ENTITIES_IN_REGISTRY;
+	validIndices.push_back(idCounter);
+	return idCounter;
 }
 
 Entity* Registry::getEntityByKey(uint32_t key)
@@ -36,7 +38,18 @@ void Registry::deleteEntity(uint32_t key)
 	if (validityArray[key])
 	{
 		validityArray[key] = 0;
+		validIndices.erase(validIndices.begin() + indexOf(key));
 		//do any cleanup for the entity, ex: freeing stuff
 	}
+}
+
+uint32_t Registry::indexOf(uint32_t key)
+{
+	for (uint32_t i = 0; i < validIndices.size(); i++)
+	{
+		if (validityArray[i] == key)
+			return i;
+	}
+	return -1;
 }
 

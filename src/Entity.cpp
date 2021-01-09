@@ -20,3 +20,9 @@ void SetEntityMass(Entity* e, float m)
 	else
 		e->inverseMass = 1 / m;
 }
+Entity* CloneEntity(Entity* e)
+{
+	Entity* newEntity = (Entity*)malloc(sizeof(Entity)); 
+	memcpy(newEntity, e, sizeof(Entity));//Not sure if this will work with func pointers
+	return newEntity;
+}

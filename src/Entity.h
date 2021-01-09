@@ -35,3 +35,4 @@ struct Entity
 void SetEntityMass(Entity* e, float m);
 void AccelerateEntityForward(Entity* e, float rotation, float deltaTime);
 void UpdatePosition(Entity* e, float deltaTime);
+Entity* CloneEntity(Entity* e);
