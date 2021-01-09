@@ -16,7 +16,6 @@ private:
 	float m_LastFrameTime = 0.0f;
 	std::shared_ptr<OrthoCamera> m_Camera;
 	UIManager m_UIManager;
-	Entity player;
 public:
 	Application();
 	~Application();

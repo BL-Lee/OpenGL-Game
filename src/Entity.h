@@ -5,6 +5,8 @@ const int MAX_RIGIDBODY_HULL = 32;
 
 struct Entity
 {
+	int id;
+
 	//Transformation
 	glm::vec3 pos;
 	glm::vec2 size;
@@ -23,13 +25,13 @@ struct Entity
 	float gravityStrength; //just use 0 for disabling
 
 	//Movement
-	void (*Accelerate)(Entity& e, float rot, float deltaTime);
-	void (*UpdatePosition)(Entity& e, float deltaTime);
+	void (*Accelerate)(Entity* e, float rot, float deltaTime);
+	void (*UpdatePosition)(Entity* e, float deltaTime);
 
 	//Visuals
 	glm::vec4 colour;
 
 };
-void SetEntityMass(Entity& e, float m);
-void AccelerateEntityForward(Entity& e, float rotation, float deltaTime);
-void UpdatePosition(Entity& e, float deltaTime);
+void SetEntityMass(Entity* e, float m);
+void AccelerateEntityForward(Entity* e, float rotation, float deltaTime);
+void UpdatePosition(Entity* e, float deltaTime);

@@ -12,6 +12,7 @@
 #include "Particles.h"
 #include "Entity.h"
 #include "Physics/Collision.h"
+#include "Registry.h"
 
 #include <iostream>
 #define BIND_EVENT_FUNC(x) std::bind(&Application::x, this, std::placeholders::_1)
@@ -45,17 +46,7 @@ Application::Application()
     };
     ParticleSystem::SetParticle(p);
     ParticleSystem::Init(999);
-    player.pos = { 0.0f,0.0f,-0.1f };
-    player.size = { 20.0f,10.0f };
-    player.acceleration = 200.0f;
-    player.colour = { 0.7f,0.1f,0.2f,1.0f };
-    player.Accelerate = AccelerateEntityForward;
-    player.UpdatePosition = UpdatePosition;
-    player.mass = 1.0f;
-    player.inverseMass = 1.0f;
-    player.restitution = 0.0f;
-    player.gravityStrength = 9.81f * 10;
-    player.gravityDirection = { 0.0f, -1.0f };
+    
 }
 void Application::Shutdown()
 {
@@ -142,9 +133,19 @@ void Application::Run()
     glm::vec4 basevertices[3] = { glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(-0.5f, -0.86602540378f, 0.0f, 1.0f), glm::vec4(-0.5f, 0.86602540378f, 0.0f, 1.0f) };
     glm::vec2 vertices[3] = { {0.0f,0.0f},{0.0f,0.0f},{0.0f,0.0f} };
 
-    
+    Entity player = {};
+    player.pos = { 0.0f,0.0f,-0.1f };
+    player.size = { 20.0f,10.0f };
+    player.acceleration = 200.0f;
+    player.colour = { 0.7f,0.1f,0.2f,1.0f };
+    player.Accelerate = AccelerateEntityForward;
+    player.UpdatePosition = UpdatePosition;
+    player.mass = 1.0f;
+    player.inverseMass = 1.0f;
+    player.restitution = 0.0f;
+    player.gravityStrength = 9.81f * 10;
+    player.gravityDirection = { 0.0f, -1.0f };
     player.vertexCount = 3;
-    
 
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), player.pos)
         * glm::rotate(glm::mat4(1.0f), (player.rotation), { 0.0f,0.0f,1.0f })
@@ -166,6 +167,9 @@ void Application::Run()
     glm::mat4 transformB = glm::translate(glm::mat4(1.0f), gooseBox.pos)
         * glm::rotate(glm::mat4(1.0f), (gooseBox.rotation), { 0.0f,0.0f,1.0f })
         * glm::scale(glm::mat4(1.0f), { gooseBox.size.x, gooseBox.size.y,1.0f });
+
+    Registry::addEntity(&player);
+    Registry::addEntity(&gooseBox);
 
     double lastTime = glfwGetTime();
     double deltaTime = 0, nowTime = 0;
@@ -196,7 +200,7 @@ void Application::Run()
             p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
             ParticleSystem::Add(1);
 
-            player.Accelerate(player, player.rotation, deltaTime);
+            player.Accelerate(&player, player.rotation, deltaTime);
         }
         else
         {
@@ -214,9 +218,14 @@ void Application::Run()
             gooseBox.velocity = { 0.0f,0.0f };
         }
 
-        //Later cycle through all entities?
-        player.UpdatePosition(player, deltaTime);
-        gooseBox.UpdatePosition(gooseBox, deltaTime);
+        for (int i = 0; i < 256; i++)
+        {
+            Entity* e = Registry::getEntityByKey(i);
+            if (e)
+                e->UpdatePosition(e, deltaTime);
+        }
+        //player.UpdatePosition(player, deltaTime);
+        //gooseBox.UpdatePosition(gooseBox, deltaTime);
 
 
         if (player.rotation > glm::two_pi<float>()) //really dont like this, add math constant header with pi as a float so i dont need to do this <float>() crap
@@ -262,7 +271,6 @@ void Application::Run()
         CollDist.SetText("Collision Distance: " + std::to_string(test.x).substr(0, 4) + "," + std::to_string(test.y).substr(0,4));
         Renderer::RenderUI(m_UIManager, m_Camera);
         window->OnUpdate();
-
     }
 }
 
