@@ -45,4 +45,5 @@ private:
 public:
 	static glm::vec2 IsColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
 	static void ResolveCollision(Entity& A, Entity& B, glm::vec2 normal);
+	
 };

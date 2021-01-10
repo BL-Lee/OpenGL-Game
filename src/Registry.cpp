@@ -22,6 +22,7 @@ uint32_t Registry::addEntity(Entity* e)
 	validityArray[idCounter] = 1;
 	entityCount++;
 	validIndices.push_back(idCounter);
+	e->id = idCounter;
 	return idCounter;
 }
 

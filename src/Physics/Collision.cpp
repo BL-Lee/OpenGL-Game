@@ -211,7 +211,6 @@ glm::vec2 Collision::IsColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 							simplexVertices[closestIndex] = support;
 							simplexCount++;
 						}
-						
 					}	
 					return intersection;
 				}
@@ -224,6 +223,9 @@ glm::vec2 Collision::IsColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 
 void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 normal)
 {
+	//maybe check this before calling this
+	if (B.mass == 0.0f && A.mass == 0.0f) return; //both walls, dont move
+
 	//relative velocity
 	glm::vec2 relV = B.velocity - A.velocity;
 
@@ -240,6 +242,32 @@ void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 normal)
 	j /= A.inverseMass + B.inverseMass;
 	//again projection, normal is unit vector
 	glm::vec2 impulse = j * normal;
+
+	A.velocity -= A.inverseMass * impulse;
+	B.velocity += B.inverseMass * impulse;
+}
+#if 0
+void Collision::ResolveCollision(glm::vec2 velocityA, glm::vec2 velocityB,
+								float massA, float massB,
+								float invMassA, float invMassB,
+								float restitutionA, float restitutionB,
+								glm::vec2 normal)
+{
+	glm::vec2 relV = velocityB - velocityA;
+
+	//projects the velocity along the normal
+	//Assumes normal is unit vector
+	float velAlongNormal = glm::dot(relV, normal);
+
+	//only calculate impulse if they are moving apart
+	if (velAlongNormal > 0.0f)
+		return;
+
+	float usedRestitution = glm::min(restitutionA, restitutionB);
+	float j = -(1 + usedRestitution) * velAlongNormal;
+	j /= invMassA + invmassB;
+	//again projection, normal is unit vector
+	glm::vec2 impulse = j * normal;
 #if 0
 	float massSum = A.mass + B.mass;
 	float ratio = B.mass / massSum;
@@ -251,3 +279,4 @@ void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 normal)
 	A.velocity -= A.inverseMass * impulse;
 	B.velocity += B.inverseMass * impulse;
 }
+#endif

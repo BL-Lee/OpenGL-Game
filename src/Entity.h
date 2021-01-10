@@ -20,6 +20,7 @@ struct Entity
 	void (*SetMass)(Entity& e, float m);
 	float restitution; //bounciness
 	glm::vec2 vertices[MAX_RIGIDBODY_HULL];
+	glm::vec2 localVertices[MAX_RIGIDBODY_HULL];
 	int vertexCount;
 	glm::vec2 gravityDirection;
 	float gravityStrength; //just use 0 for disabling
@@ -36,3 +37,4 @@ void SetEntityMass(Entity* e, float m);
 void AccelerateEntityForward(Entity* e, float rotation, float deltaTime);
 void UpdatePosition(Entity* e, float deltaTime);
 Entity* CloneEntity(Entity* e);
+void UpdateWorldVertices(Entity* e);

@@ -119,19 +119,10 @@ void Application::Run()
 
 
     std::shared_ptr<Font> m_silkFont = std::make_shared<Font>();
-    TextBox rotation({ -250.0f,0.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
-    TextBox velocity({ -250.0f,-50.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
-    TextBox position({ -250.0f,-100.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
-    m_UIManager.AddTextBox(rotation);
-    m_UIManager.AddTextBox(velocity);
-    m_UIManager.AddTextBox(position);
-    TextBox CollDist({ -250.0f, 100.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
-    m_UIManager.AddTextBox(CollDist);
-    TextBox wrapper({ -250.0f,-150.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,0.0f }, "Ui Eleeeeeeeeeement its wrap wrap wrap wrap awrap", m_silkFont);
-    m_UIManager.AddTextBox(wrapper);
+    TextBox fps({ -250.0f,0.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
+    m_UIManager.AddTextBox(fps);
 
-    glm::vec4 basevertices[3] = { glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(-0.5f, -0.86602540378f, 0.0f, 1.0f), glm::vec4(-0.5f, 0.86602540378f, 0.0f, 1.0f) };
-    glm::vec2 vertices[3] = { {0.0f,0.0f},{0.0f,0.0f},{0.0f,0.0f} };
+    glm::vec2 basevertices[3] = { glm::vec2(1.0f, 0.0f), glm::vec2(-0.5f, -0.86602540378f), glm::vec2(-0.5f, 0.86602540378f) };
 
     Entity player = {};
     player.pos = { 0.0f,0.0f,-0.1f };
@@ -143,32 +134,54 @@ void Application::Run()
     player.mass = 1.0f;
     player.inverseMass = 1.0f;
     player.restitution = 0.0f;
-    player.gravityStrength = 9.81f * 10;
+    player.gravityStrength = 0;//9.81f * 10;
     player.gravityDirection = { 0.0f, -1.0f };
     player.vertexCount = 3;
-
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), player.pos)
-        * glm::rotate(glm::mat4(1.0f), (player.rotation), { 0.0f,0.0f,1.0f })
-        * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
+    memcpy(player.localVertices, basevertices, sizeof(glm::vec2) * player.vertexCount);
     
-    glm::vec4 box[4] = { { -0.5f, -0.5f, 0.0f, 1.0f },
-                         { 0.5f, -0.5f, 0.0f, 1.0f },
-                         { 0.5f,  0.5f, 0.0f, 1.0f },
-                         { -0.5f, 0.5f, 0.0f, 1.0f } };
+    glm::vec2 box[4] = { { -0.5f, -0.5f },
+                         { 0.5f, -0.5f},
+                         { 0.5f,  0.5f},
+                         { -0.5f, 0.5f } };
     Entity wallBottom = {};
     wallBottom.pos = { 0.0f,-300.0f,0.0f };
     wallBottom.size = { 1000.0f,5.0f };
     wallBottom.rotation = 0.0f;
     wallBottom.vertexCount = 4;
+    memcpy(wallBottom.localVertices, box, sizeof(glm::vec2) * wallBottom.vertexCount); //make this a function
     wallBottom.mass = 0.0f;
     wallBottom.inverseMass = 0.0f;
-    wallBottom.restitution = 1.0f; //TODO: streamline this transformation matrix. Maybe just calculate on the fly
-    glm::mat4 transformB = glm::translate(glm::mat4(1.0f), wallBottom.pos)
-        * glm::rotate(glm::mat4(1.0f), (wallBottom.rotation), { 0.0f,0.0f,1.0f })
-        * glm::scale(glm::mat4(1.0f), { wallBottom.size.x, wallBottom.size.y,1.0f });
+    wallBottom.restitution = 0.8f; 
+    wallBottom.colour = { 1.0f,1.0f,1.0f,1.0f };
+    
+    Entity* wallRight = CloneEntity(&wallBottom);
+    wallRight->pos = { 500.0f,0.0f,0.0f };
+    wallRight->size = { 5.0f, 600.0f };
+
+    Entity* wallLeft = CloneEntity(wallRight);
+    wallLeft->pos = { -500.0f, 0.0f, 0.0f };
+   
 
     Registry::addEntity(&player);
     Registry::addEntity(&wallBottom);
+    Registry::addEntity(wallLeft);
+    Registry::addEntity(wallRight);
+
+    for (int i = 0; i < 20; i++)
+    {
+        Entity* e = CloneEntity(wallRight);
+        e->pos = { (Random::Float() - 0.5f) * 300.0f, (Random::Float() - 0.5f) * 300.0f, 0.0f };
+        e->rotation = { Random::Float() };
+        e->size = { (Random::Float()) * 100.0f, (Random::Float()) * 100.0f };
+        e->gravityDirection = { 0.0f,-1.0f };
+        e->gravityStrength = { Random::Float() * 98.1f };
+        e->mass = 0.001f + e->size.x * e->size.y;
+        e->inverseMass = 1 / e->mass;
+        e->UpdatePosition = UpdatePosition;
+        e->colour = { 1.0f,1.0f,0.0f,1.0f };
+
+        Registry::addEntity(e);
+    }
 
     double lastTime = glfwGetTime();
     double deltaTime = 0, nowTime = 0;
@@ -214,9 +227,41 @@ void Application::Run()
         for (int i = 0; i < Registry::validIndices.size(); i++)
         {
             Entity* e = Registry::getEntityByKey(i);
+            {
+                if (e)
+                {
+                    UpdateWorldVertices(e);
+                }
+            }
+        }
+        for (int i = 0; i < Registry::validIndices.size(); i++)
+        {
+            Entity* e = Registry::getEntityByKey(i);
             if (e)
+            {
+                if (e->vertexCount == 4)
+                {
+                    Renderer::BeginScene(m_Camera);
+                    Renderer::DrawRotatedQuad(e->pos, e->size, e->rotation, e->colour);
+                    Renderer::EndScene();
+                }
                 if (e->mass)
+                {
                     e->UpdatePosition(e, deltaTime); //no mass means its a wall, so it doesnt move
+                }
+                for (int j = i+1; j < Registry::validIndices.size(); j++)
+                {
+                    Entity* other = Registry::getEntityByKey(j);
+                    if (other)
+                    {
+                        glm::vec2 collNormal = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
+                        if (!(collNormal.x == 0.0f && collNormal.y == 0.0f))
+                        {
+                            Collision::ResolveCollision(*e, *other, glm::normalize(collNormal));
+                        }
+                    }
+                }
+            }
         }
 
 
@@ -226,20 +271,7 @@ void Application::Run()
             player.rotation += glm::two_pi<float>();
 
         //Bit of collision tester stuff
-        transform = glm::translate(glm::mat4(1.0f), player.pos)
-            * glm::rotate(glm::mat4(1.0f), player.rotation, { 0.0f,0.0f,1.0f })
-            * glm::scale(glm::mat4(1.0f), { player.size.x,player.size.y,1.0f });
-        transformB = glm::translate(glm::mat4(1.0f), wallBottom.pos)
-            * glm::rotate(glm::mat4(1.0f), (wallBottom.rotation), { 0.0f,0.0f,1.0f })
-            * glm::scale(glm::mat4(1.0f), { wallBottom.size.x, wallBottom.size.y,1.0f });
-        for (unsigned int i = 0; i < player.vertexCount; i++)
-        {
-            player.vertices[i] = transform * basevertices[i];
-        }
-        for (unsigned int i = 0; i < wallBottom.vertexCount; i++)
-        {
-            wallBottom.vertices[i] = transformB * box[i];
-        }
+        
         glm::vec2 test = Collision::IsColliding(player.vertices, player.vertexCount, wallBottom.vertices, wallBottom.vertexCount);
         //not colliding
         if (test.x == 0.0f && test.y == 0.0f)
@@ -248,19 +280,16 @@ void Application::Run()
         else
         {
             player.colour = { 1.0f,0.0f,1.0f,1.0f };
-            Collision::ResolveCollision(player, wallBottom, glm::normalize(test));
+            //Collision::ResolveCollision(player, wallBottom, glm::normalize(test));
         }
         Renderer::BeginScene(m_Camera);
         ParticleSystem::Draw((float)deltaTime);
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
-        Renderer::DrawQuad(wallBottom.pos, wallBottom.size);
+        //Renderer::DrawQuad(wallBottom.pos, wallBottom.size);
         Renderer::DrawLine(player.pos, { test.x + player.pos.x, test.y + player.pos.y ,player.pos.z });
 
         Renderer::EndScene();
-        rotation.SetText("Rotation: "+ std::to_string(player.rotation).substr(0,4));
-        velocity.SetText("Velocity: " + std::to_string(player.velocity.x).substr(0,4) + "," +  std::to_string(player.velocity.y).substr(0,4));
-        position.SetText("Position: " + std::to_string(player.pos.x).substr(0, 4) + "," + std::to_string(player.pos.y).substr(0, 4));
-        CollDist.SetText("Collision Distance: " + std::to_string(test.x).substr(0, 4) + "," + std::to_string(test.y).substr(0,4));
+        fps.SetText("fps: "+ std::to_string(1/deltaTime).substr(0,2));
         Renderer::RenderUI(m_UIManager, m_Camera);
         window->OnUpdate();
     }
