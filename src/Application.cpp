@@ -130,7 +130,7 @@ void Application::Run()
     player.acceleration = 200.0f;
     player.colour = { 0.7f,0.1f,0.2f,1.0f };
     player.Accelerate = AccelerateEntityForward;
-    player.UpdatePosition = UpdatePosition;
+    player.UpdateTransform = UpdateTransform;
     player.mass = 1.0f;
     player.inverseMass = 1.0f;
     player.restitution = 0.0f;
@@ -155,11 +155,11 @@ void Application::Run()
     wallBottom.colour = { 1.0f,1.0f,1.0f,1.0f };
     
     Entity* wallRight = CloneEntity(&wallBottom);
-    wallRight->pos = { 500.0f,0.0f,0.0f };
+    wallRight->pos = { 500.0f,20.0f,0.0f };
     wallRight->size = { 5.0f, 600.0f };
 
     Entity* wallLeft = CloneEntity(wallRight);
-    wallLeft->pos = { -500.0f, 0.0f, 0.0f };
+    wallLeft->pos = { -500.0f, 20.0f, 0.0f };
    
 
     Registry::addEntity(&player);
@@ -167,7 +167,7 @@ void Application::Run()
     Registry::addEntity(wallLeft);
     Registry::addEntity(wallRight);
 
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 3; i++)
     {
         Entity* e = CloneEntity(wallRight);
         e->pos = { (Random::Float() - 0.5f) * 300.0f, (Random::Float() - 0.5f) * 300.0f, 0.0f };
@@ -177,7 +177,7 @@ void Application::Run()
         e->gravityStrength = { Random::Float() * 98.1f };
         e->mass = 0.001f + e->size.x * e->size.y;
         e->inverseMass = 1 / e->mass;
-        e->UpdatePosition = UpdatePosition;
+        e->UpdateTransform = UpdateTransform;
         e->colour = { 1.0f,1.0f,0.0f,1.0f };
 
         Registry::addEntity(e);
@@ -214,9 +214,9 @@ void Application::Run()
             player.Accelerate(&player, player.rotation, deltaTime);
         }
         if (Input::GetKey(window, GLFW_KEY_RIGHT))
-            player.rotation -= glm::radians(5.0f);
+            player.angularVelocity -= glm::radians(5.0f);
         if (Input::GetKey(window, GLFW_KEY_LEFT))
-            player.rotation += glm::radians(5.0f);
+            player.angularVelocity += glm::radians(5.0f);
         if (Input::GetMouseButton(window, GLFW_MOUSE_BUTTON_1))
         {
             wallBottom.pos.x = Input::GetMouseXPos(window);
@@ -247,17 +247,17 @@ void Application::Run()
                 }
                 if (e->mass)
                 {
-                    e->UpdatePosition(e, deltaTime); //no mass means its a wall, so it doesnt move
+                    e->UpdateTransform(e, deltaTime); //no mass means its a wall, so it doesnt move
                 }
                 for (int j = i+1; j < Registry::validIndices.size(); j++)
                 {
                     Entity* other = Registry::getEntityByKey(j);
                     if (other)
                     {
-                        glm::vec2 collNormal = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
-                        if (!(collNormal.x == 0.0f && collNormal.y == 0.0f))
+                        glm::vec2 collVector = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
+                        if (!(collVector.x == 0.0f && collVector.y == 0.0f))
                         {
-                            Collision::ResolveCollision(*e, *other, glm::normalize(collNormal));
+                            Collision::ResolveCollision(*e, *other, collVector);
                         }
                     }
                 }

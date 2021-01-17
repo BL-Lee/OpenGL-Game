@@ -42,6 +42,7 @@ private:
 	static glm::vec2 getSupport(glm::vec2 shape[], int size, glm::vec2 direction);
 	static glm::vec2 TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c);
 	static void FindClosestPoint(glm::vec2 simplexVertices[], int size, Winding winding);
+	static float CrossProduct2D(glm::vec2 a, glm::vec2 b);
 public:
 	static glm::vec2 IsColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
 	static void ResolveCollision(Entity& A, Entity& B, glm::vec2 normal);

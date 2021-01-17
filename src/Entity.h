@@ -12,11 +12,14 @@ struct Entity
 	glm::vec2 size;
 	glm::vec2 velocity;
 	float rotation;
+	float angularVelocity;
 	float acceleration;
 	
 	//RigidBody
 	float mass;
 	float inverseMass;
+	float inertia;
+	float inverseInertia;
 	void (*SetMass)(Entity& e, float m);
 	float restitution; //bounciness
 	glm::vec2 vertices[MAX_RIGIDBODY_HULL];
@@ -27,7 +30,7 @@ struct Entity
 
 	//Movement
 	void (*Accelerate)(Entity* e, float rot, float deltaTime);
-	void (*UpdatePosition)(Entity* e, float deltaTime);
+	void (*UpdateTransform)(Entity* e, float deltaTime);
 
 	//Visuals
 	glm::vec4 colour;
@@ -35,6 +38,6 @@ struct Entity
 };
 void SetEntityMass(Entity* e, float m);
 void AccelerateEntityForward(Entity* e, float rotation, float deltaTime);
-void UpdatePosition(Entity* e, float deltaTime);
+void UpdateTransform(Entity* e, float deltaTime);
 Entity* CloneEntity(Entity* e);
 void UpdateWorldVertices(Entity* e);

@@ -39,6 +39,7 @@ glm::vec2 Collision::TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c)
 	
 	p.x = b.x * ac - a.x * bc;
 	p.y = b.y * ac - a.y * bc;
+	ASSERT(p.x != FLT_MAX);
 	return p;
 }
 
@@ -107,7 +108,7 @@ glm::vec2 Collision::IsColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 	}
 	centerB /= sizeB;
 
-	glm::vec2 direction = centerA - centerB;
+	glm::vec2 direction = glm::normalize(centerA - centerB);
 	glm::vec2 simplexVertices[COLLISION_MAX_WINDING];
 	simplexVertices[0] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, -direction);
 	int simplexCount = 1;
@@ -159,7 +160,7 @@ glm::vec2 Collision::IsColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 				if (glm::dot(abPerp, a0) > 0)
 				{
 					//origin is outside ab, get rid of c and go towards abPerp
-					direction = abPerp;
+					direction = glm::normalize(abPerp);
 					//tester for now, remove 0 and add new support to index 2
 					glm::vec2 temp = simplexVertices[1];
 					simplexVertices[1] = simplexVertices[2];
@@ -169,7 +170,7 @@ glm::vec2 Collision::IsColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 				else if (glm::dot(acPerp, a0) > 0)
 				{
 					//origin outside ac, get rid of b
-					direction = acPerp;
+					direction = glm::normalize(acPerp);
 					simplexVertices[1] = simplexVertices[2];
 					simplexVertices[2] = getSupport(shapeA, sizeA, direction) - getSupport(shapeB, sizeB, -direction);
 				}
@@ -221,14 +222,20 @@ glm::vec2 Collision::IsColliding(glm::vec2 shapeA[], int sizeA, glm::vec2 shapeB
 	return glm::vec2(0.0f, 0.0f);
 }
 
-void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 normal)
+float Collision::CrossProduct2D(glm::vec2 a, glm::vec2 b)
 {
-	//maybe check this before calling this
+	return a.x * b.y - a.y * b.x;
+}
+
+void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 collVector)
+{
+	
 	if (B.mass == 0.0f && A.mass == 0.0f) return; //both walls, dont move
 
 	//relative velocity
 	glm::vec2 relV = B.velocity - A.velocity;
 
+	glm::vec2 normal = glm::normalize(collVector);
 	//projects the velocity along the normal
 	//Assumes normal is unit vector
 	float velAlongNormal = glm::dot(relV, normal);
@@ -237,14 +244,33 @@ void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 normal)
 	if (velAlongNormal > 0.0f)
 		return;
 
+	/**TEMP TEMP TEMP 
+	* CALCULATING INERTIA AS base*height^3/12
+	* WHICH ONLY HOLDS TRUE FOR RECTANGLES
+	**/
+	float inertiaA = A.size.x * A.size.y * A.size.y * A.size.y / 12;
+	float inertiaB = B.size.x * B.size.y * B.size.y * B.size.y / 12;
+
+
+	float contactACrossNormal = CrossProduct2D(normal, collVector - glm::vec2{ A.pos.x, A.pos.y });
+	float contactBCrossNormal = CrossProduct2D(normal, collVector - glm::vec2{ B.pos.x, B.pos.y });
+	glm::vec2 contactVectorB = collVector - glm::vec2{ B.pos.x, B.pos.y };
+
+
 	float usedRestitution = glm::min(A.restitution, B.restitution);
-	float j = -(1 + usedRestitution) * velAlongNormal;
-	j /= A.inverseMass + B.inverseMass;
+	float j = -(1 + usedRestitution) * velAlongNormal; 
+	//use inertia later, mass is a placeholder here
+	j /= A.inverseMass + B.inverseMass + (contactACrossNormal * contactACrossNormal / inertiaA) + (contactBCrossNormal * contactBCrossNormal / inertiaB);
 	//again projection, normal is unit vector
 	glm::vec2 impulse = j * normal;
 
-	A.velocity -= A.inverseMass * impulse;
+	A.velocity += A.inverseMass * -impulse;
 	B.velocity += B.inverseMass * impulse;
+
+	
+	
+	 A.angularVelocity += 1.0f / inertiaA * CrossProduct2D(collVector - glm::vec2{ A.pos.x,A.pos.y }, -impulse);
+	 B.angularVelocity += 1.0f / inertiaB * CrossProduct2D(collVector - glm::vec2{ B.pos.x,B.pos.y }, impulse);
 }
 #if 0
 void Collision::ResolveCollision(glm::vec2 velocityA, glm::vec2 velocityB,
