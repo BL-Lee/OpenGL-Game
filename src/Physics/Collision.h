@@ -24,13 +24,22 @@
 /*
 * 
 */
+struct CollisionOverlapData
+{
+	glm::vec2 AToCollisionPoint;
+	glm::vec2 normalOffB;
+};
+struct Manifold
+{
+
+};
 class Collision
 {
 private:
 	static float closestDistance;
 	static glm::vec2 closestNormal;
 	static int closestIndex;
-	static constexpr float COLLISION_EPSILON = 1.0f;
+	static constexpr float COLLISION_EPSILON = 0.001f;
 	static const int COLLISION_MAX_WINDING = 32;
 	enum Winding
 	{
@@ -41,10 +50,16 @@ private:
 	static int sizeB;
 	static glm::vec2 getSupport(glm::vec2 shape[], int size, glm::vec2 direction);
 	static glm::vec2 TripleProduct(glm::vec2 a, glm::vec2 b, glm::vec2 c);
+	
 	static void FindClosestPoint(glm::vec2 simplexVertices[], int size, Winding winding);
 	static float CrossProduct2D(glm::vec2 a, glm::vec2 b);
+	static glm::vec2 CrossProduct2D(float a, glm::vec2 b);
+	static void CorrectPosition(Entity& A, Entity& B, float penetrationDepth, glm::vec2 normal);
+	
 public:
-	static glm::vec2 IsColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
-	static void ResolveCollision(Entity& A, Entity& B, glm::vec2 normal);
+	static CollisionOverlapData IsColliding(glm::vec2 shapea[], int sizea, glm::vec2 shapeb[], int sizeb);
+	static void ResolveCollision(Entity& A, Entity& B, glm::vec2 collVector, glm::vec2 normal);
+	static void ResolveCollisionNoRotation(Entity& A, Entity& B, glm::vec2 collVector, glm::vec2 normal);
+	static glm::vec2 OrthoganalVectorTowardsTarget(glm::vec2 a,glm::vec2 b, glm::vec2 target);
 	
 };

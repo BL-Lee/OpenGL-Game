@@ -20,6 +20,8 @@ struct Entity
 	float inverseMass;
 	float inertia;
 	float inverseInertia;
+
+	
 	void (*SetMass)(Entity& e, float m);
 	float restitution; //bounciness
 	glm::vec2 vertices[MAX_RIGIDBODY_HULL];

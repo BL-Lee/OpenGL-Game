@@ -115,6 +115,13 @@ bool Application::OnMousePress(MousePressedEvent& e)
 void Application::Run()
 {
     
+    glm::vec2 a = { -2.0f,-2.0f };
+    glm::vec2 b = { 2.0f,2.0f };
+    glm::vec2 c = { 2.0f,-2.0f };
+    glm::vec2 d = Collision::OrthoganalVectorTowardsTarget(a, b, c);
+
+
+
     std::shared_ptr<Texture> outlineTex = std::make_shared<Texture>("res/textures/InvertexOutline.png");
 
 
@@ -148,10 +155,11 @@ void Application::Run()
     wallBottom.size = { 1000.0f,5.0f };
     wallBottom.rotation = 0.0f;
     wallBottom.vertexCount = 4;
+    wallBottom.angularVelocity = 0.0f;
     memcpy(wallBottom.localVertices, box, sizeof(glm::vec2) * wallBottom.vertexCount); //make this a function
     wallBottom.mass = 0.0f;
     wallBottom.inverseMass = 0.0f;
-    wallBottom.restitution = 0.8f; 
+    wallBottom.restitution = 0.2f; 
     wallBottom.colour = { 1.0f,1.0f,1.0f,1.0f };
     
     Entity* wallRight = CloneEntity(&wallBottom);
@@ -167,7 +175,7 @@ void Application::Run()
     Registry::addEntity(wallLeft);
     Registry::addEntity(wallRight);
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 2; i++)
     {
         Entity* e = CloneEntity(wallRight);
         e->pos = { (Random::Float() - 0.5f) * 300.0f, (Random::Float() - 0.5f) * 300.0f, 0.0f };
@@ -175,7 +183,7 @@ void Application::Run()
         e->size = { (Random::Float()) * 100.0f, (Random::Float()) * 100.0f };
         e->gravityDirection = { 0.0f,-1.0f };
         e->gravityStrength = { Random::Float() * 98.1f };
-        e->mass = 0.001f + e->size.x * e->size.y;
+        e->mass =  0.001f * e->size.x * e->size.y;
         e->inverseMass = 1 / e->mass;
         e->UpdateTransform = UpdateTransform;
         e->colour = { 1.0f,1.0f,0.0f,1.0f };
@@ -213,10 +221,14 @@ void Application::Run()
 
             player.Accelerate(&player, player.rotation, deltaTime);
         }
+        else
+        {
+            player.velocity = { 0.0f,0.0f };
+        }
         if (Input::GetKey(window, GLFW_KEY_RIGHT))
-            player.angularVelocity -= glm::radians(5.0f);
+            player.rotation -= glm::radians(5.0f);
         if (Input::GetKey(window, GLFW_KEY_LEFT))
-            player.angularVelocity += glm::radians(5.0f);
+            player.rotation += glm::radians(5.0f);
         if (Input::GetMouseButton(window, GLFW_MOUSE_BUTTON_1))
         {
             wallBottom.pos.x = Input::GetMouseXPos(window);
@@ -249,16 +261,18 @@ void Application::Run()
                 {
                     e->UpdateTransform(e, deltaTime); //no mass means its a wall, so it doesnt move
                 }
-                for (int j = i+1; j < Registry::validIndices.size(); j++)
+                for (int j = 0; j < Registry::validIndices.size(); j++)
                 {
                     Entity* other = Registry::getEntityByKey(j);
-                    if (other)
+                    if (other && j != i)
                     {
-                        glm::vec2 collVector = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
-                        if (!(collVector.x == 0.0f && collVector.y == 0.0f))
+                        Renderer::BeginScene(m_Camera);
+                        CollisionOverlapData overlapData = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
+                        if (!(overlapData.AToCollisionPoint.x == 0.0f && overlapData.AToCollisionPoint.y == 0.0f))
                         {
-                            Collision::ResolveCollision(*e, *other, collVector);
+                            Collision::ResolveCollision(*e, *other, overlapData.AToCollisionPoint, overlapData.normalOffB);
                         }
+                        Renderer::EndScene();
                     }
                 }
             }
@@ -270,23 +284,11 @@ void Application::Run()
         if (player.rotation < glm::two_pi<float>())
             player.rotation += glm::two_pi<float>();
 
-        //Bit of collision tester stuff
-        
-        glm::vec2 test = Collision::IsColliding(player.vertices, player.vertexCount, wallBottom.vertices, wallBottom.vertexCount);
-        //not colliding
-        if (test.x == 0.0f && test.y == 0.0f)
-            player.colour = { 0.7f,0.1f,0.2f,1.0f };
-        //colliding
-        else
-        {
-            player.colour = { 1.0f,0.0f,1.0f,1.0f };
-            //Collision::ResolveCollision(player, wallBottom, glm::normalize(test));
-        }
         Renderer::BeginScene(m_Camera);
         ParticleSystem::Draw((float)deltaTime);
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
         //Renderer::DrawQuad(wallBottom.pos, wallBottom.size);
-        Renderer::DrawLine(player.pos, { test.x + player.pos.x, test.y + player.pos.y ,player.pos.z });
+        //Renderer::DrawLine(player.pos, { test.x + player.pos.x, test.y + player.pos.y ,player.pos.z });
 
         Renderer::EndScene();
         fps.SetText("fps: "+ std::to_string(1/deltaTime).substr(0,2));
