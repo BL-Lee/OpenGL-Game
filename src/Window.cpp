@@ -29,7 +29,7 @@ Window::Window(const WindowProps& props)
     /* Make the window's context current */
     glfwMakeContextCurrent(m_Window);
 
-    SetVSync(true);
+    SetVSync(false);
 
     if (glewInit() != GLEW_OK)
         std::cout << "GLEW INIT Error" << std::endl;

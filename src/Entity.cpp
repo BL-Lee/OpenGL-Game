@@ -20,6 +20,12 @@ void SetEntityMass(Entity* e, float m)
 	else
 		e->inverseMass = 1 / m;
 }
+void SetEntityAABB(Entity* e)
+{
+	float maxDistToCorner = glm::sqrt(e->size.x * e->size.x + e->size.y * e->size.y);
+	e->AABBHeight = maxDistToCorner;
+	e->AABBWidth = maxDistToCorner;
+}
 Entity* CloneEntity(Entity* e)
 {
 	Entity* newEntity = (Entity*)malloc(sizeof(Entity)); 
@@ -41,4 +47,9 @@ void UpdateWorldVertices(Entity* e)
 	{
 		e->vertices[i] = result * glm::vec4{ e->localVertices[i].x, e->localVertices[i].y, 0.0f, 1.0f };
 	}
+}
+void CopyVertices(Entity* e, glm::vec2* vertices, int count)
+{
+	memcpy(e->localVertices, vertices, sizeof(glm::vec2) * count);
+	e->vertexCount = count;
 }

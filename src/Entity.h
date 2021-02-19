@@ -21,7 +21,9 @@ struct Entity
 	float inertia;
 	float inverseInertia;
 
-	
+	float AABBWidth;
+	float AABBHeight;
+
 	void (*SetMass)(Entity& e, float m);
 	float restitution; //bounciness
 	glm::vec2 vertices[MAX_RIGIDBODY_HULL];
@@ -43,3 +45,5 @@ void AccelerateEntityForward(Entity* e, float rotation, float deltaTime);
 void UpdateTransform(Entity* e, float deltaTime);
 Entity* CloneEntity(Entity* e);
 void UpdateWorldVertices(Entity* e);
+void SetEntityAABB(Entity* e);
+void CopyVertices(Entity* e, glm::vec2* vertices, int count);

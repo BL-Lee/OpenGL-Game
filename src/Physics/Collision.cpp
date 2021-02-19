@@ -23,7 +23,7 @@ glm::vec2 Collision::getSupport(glm::vec2 shape[], int size, glm::vec2 direction
 			furthestVertex = shape[i];
 		}
 	}
-	ASSERT(furthestVertex.x != 0.0f);
+	//ASSERT(furthestVertex.x != 0.0f);
 	return furthestVertex;
 }
 /*
@@ -294,7 +294,7 @@ void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 collVector, glm
 		return;
 
 	/**TEMP TEMP TEMP 
-	* CALCULATING INERTIA AS base*height^3/12
+	* CALCULATING INERTIA AS base^2*height^2/12
 	* WHICH ONLY HOLDS TRUE FOR RECTANGLES
 	**/
 
@@ -305,8 +305,6 @@ void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 collVector, glm
 	float inertiaB = FLT_MAX;
 	if (B.mass != 0.0f)
 		inertiaB = B.size.x * B.size.x * B.size.y * B.size.y  * B.mass / 12;
-
-	
 
 	float contactACrossNormal = CrossProduct2D(contactA, normal);
 	float contactBCrossNormal = CrossProduct2D(contactB, normal);
@@ -331,7 +329,31 @@ void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 collVector, glm
 	float penetration = glm::length(contactA);
 
 	CorrectPosition(A, B, penetration, normal);
-	 
+	//friction part broken atm
+#if 0
+	relV = B.velocity - A.velocity;
+	glm::vec2 tangent = relV - glm::dot(relV, n) * n;
+	tangent = glm::normalize(tangent);
+	float jt = -glm::dot(relV, tangent);
+
+	jt /= A.inverseMass + B.inverseMass;
+	float STATICFRICTION = 0.1;
+	float mu = STATICFRICTION;
+
+	glm::vec2 frictionImpulse;
+	if (glm::abs(jt) < j * mu)
+	{
+		frictionImpulse = jt * tangent;
+	}
+	else
+	{
+		float DYNAMICFRICTION = 0.01;
+		frictionImpulse = -j * tangent * DYNAMICFRICTION;
+	}
+
+	A.velocity -= A.inverseMass * frictionImpulse;
+	B.velocity += B.inverseMass * frictionImpulse;
+#endif
 }
 void Collision::ResolveCollisionNoRotation(Entity& A, Entity& B, glm::vec2 collVector, glm::vec2 n)
 {
@@ -354,37 +376,4 @@ void Collision::ResolveCollisionNoRotation(Entity& A, Entity& B, glm::vec2 collV
 	A.velocity -= A.inverseMass * impulse;
 	B.velocity += B.inverseMass * impulse;
 }
-#if 0
-void Collision::ResolveCollision(glm::vec2 velocityA, glm::vec2 velocityB,
-								float massA, float massB,
-								float invMassA, float invMassB,
-								float restitutionA, float restitutionB,
-								glm::vec2 normal)
-{
-	glm::vec2 relV = velocityB - velocityA;
 
-	//projects the velocity along the normal
-	//Assumes normal is unit vector
-	float velAlongNormal = glm::dot(relV, normal);
-
-	//only calculate impulse if they are moving apart
-	if (velAlongNormal > 0.0f)
-		return;
-
-	float usedRestitution = glm::min(restitutionA, restitutionB);
-	float j = -(1 + usedRestitution) * velAlongNormal;
-	j /= invMassA + invmassB;
-	//again projection, normal is unit vector
-	glm::vec2 impulse = j * normal;
-#if 0
-	float massSum = A.mass + B.mass;
-	float ratio = B.mass / massSum;
-	A.velocity -= ratio * impulse;
-
-	ratio = A.mass / massSum;
-	B.velocity += ratio * impulse;
-#endif
-	A.velocity -= A.inverseMass * impulse;
-	B.velocity += B.inverseMass * impulse;
-}
-#endif

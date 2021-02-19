@@ -88,6 +88,17 @@ bool Application::OnKeyPress(KeyPressedEvent& e)
 {
     //switch on keycode for important thing like escape, pause whatnot
     //Otherwise use Input Polling
+    switch (e.GetKeyCode())
+    {
+        case GLFW_KEY_SPACE:
+        {
+            Entity* bullet = Registry::cloneEntity(2);  //for bullet for now CLEANUP CLEANUP
+            Entity* player = Registry::getEntityByKey(0); // player
+            bullet->velocity = player->velocity + glm::vec2{0.0f, 100.0f};
+            bullet->pos = player->pos;
+            printf("Entity added! key: %d\n", bullet->id);
+        }break;
+    }
     return true;
 }
 bool Application::OnKeyRelease(KeyReleasedEvent& e)
@@ -114,16 +125,8 @@ bool Application::OnMousePress(MousePressedEvent& e)
 
 void Application::Run()
 {
-    
-    glm::vec2 a = { -2.0f,-2.0f };
-    glm::vec2 b = { 2.0f,2.0f };
-    glm::vec2 c = { 2.0f,-2.0f };
-    glm::vec2 d = Collision::OrthoganalVectorTowardsTarget(a, b, c);
-
-
 
     std::shared_ptr<Texture> outlineTex = std::make_shared<Texture>("res/textures/InvertexOutline.png");
-
 
     std::shared_ptr<Font> m_silkFont = std::make_shared<Font>();
     TextBox fps({ -250.0f,0.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
@@ -144,52 +147,37 @@ void Application::Run()
     player.gravityStrength = 0;//9.81f * 10;
     player.gravityDirection = { 0.0f, -1.0f };
     player.vertexCount = 3;
+    SetEntityAABB(&player);
     memcpy(player.localVertices, basevertices, sizeof(glm::vec2) * player.vertexCount);
     
     glm::vec2 box[4] = { { -0.5f, -0.5f },
                          { 0.5f, -0.5f},
                          { 0.5f,  0.5f},
                          { -0.5f, 0.5f } };
-    Entity wallBottom = {};
-    wallBottom.pos = { 0.0f,-300.0f,0.0f };
-    wallBottom.size = { 1000.0f,5.0f };
-    wallBottom.rotation = 0.0f;
-    wallBottom.vertexCount = 4;
-    wallBottom.angularVelocity = 0.0f;
-    memcpy(wallBottom.localVertices, box, sizeof(glm::vec2) * wallBottom.vertexCount); //make this a function
-    wallBottom.mass = 0.0f;
-    wallBottom.inverseMass = 0.0f;
-    wallBottom.restitution = 0.2f; 
-    wallBottom.colour = { 1.0f,1.0f,1.0f,1.0f };
+    Entity asteroid = {};
+    asteroid.pos = { 0.0f,-300.0f,0.0f };
+    asteroid.size = { 10.0f,5.0f };
+    asteroid.rotation = 0.0f;
+    asteroid.vertexCount = 4;
+    asteroid.angularVelocity = 0.0f;
+    SetEntityAABB(&asteroid);
+    memcpy(asteroid.localVertices, box, sizeof(glm::vec2) * asteroid.vertexCount); //make this a function
+    SetEntityMass(&asteroid, 1.0f);
+    asteroid.UpdateTransform = UpdateTransform;
+    asteroid.restitution = 0.2f; 
+    asteroid.colour = { 1.0f,1.0f,1.0f,1.0f };
     
-    Entity* wallRight = CloneEntity(&wallBottom);
-    wallRight->pos = { 500.0f,20.0f,0.0f };
-    wallRight->size = { 5.0f, 600.0f };
-
-    Entity* wallLeft = CloneEntity(wallRight);
-    wallLeft->pos = { -500.0f, 20.0f, 0.0f };
-   
+    Entity bullet = {};
+    bullet.size = { 2.0f, 2.0f };
+    CopyVertices(&bullet, box, 4);
+    SetEntityMass(&bullet, 1.0f);
+    bullet.UpdateTransform = UpdateTransform;
+    bullet.restitution = 1.0f;
+    bullet.colour = { 1.0f,1.0f,1.0f,1.0f };
 
     Registry::addEntity(&player);
-    Registry::addEntity(&wallBottom);
-    Registry::addEntity(wallLeft);
-    Registry::addEntity(wallRight);
-
-    for (int i = 0; i < 2; i++)
-    {
-        Entity* e = CloneEntity(wallRight);
-        e->pos = { (Random::Float() - 0.5f) * 300.0f, (Random::Float() - 0.5f) * 300.0f, 0.0f };
-        e->rotation = { Random::Float() };
-        e->size = { (Random::Float()) * 100.0f, (Random::Float()) * 100.0f };
-        e->gravityDirection = { 0.0f,-1.0f };
-        e->gravityStrength = { Random::Float() * 98.1f };
-        e->mass =  0.001f * e->size.x * e->size.y;
-        e->inverseMass = 1 / e->mass;
-        e->UpdateTransform = UpdateTransform;
-        e->colour = { 1.0f,1.0f,0.0f,1.0f };
-
-        Registry::addEntity(e);
-    }
+    Registry::addEntity(&asteroid);
+    Registry::addEntity(&bullet);
 
     double lastTime = glfwGetTime();
     double deltaTime = 0, nowTime = 0;
@@ -211,14 +199,15 @@ void Application::Run()
         }
         if (Input::GetKey(window, GLFW_KEY_UP))
         {
+            
             glm::vec2 direction = { cos(player.rotation), sin(player.rotation) };
-
+            
             Particle& p = ParticleSystem::GetbaseParticle();
             p.Pos      = player.pos;
             p.Rotation = player.rotation;
             p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
             ParticleSystem::Add(1);
-
+            
             player.Accelerate(&player, player.rotation, deltaTime);
         }
         else
@@ -226,16 +215,10 @@ void Application::Run()
             player.velocity = { 0.0f,0.0f };
         }
         if (Input::GetKey(window, GLFW_KEY_RIGHT))
-            player.rotation -= glm::radians(5.0f);
+            player.rotation -= glm::radians(200.0f) * deltaTime;
         if (Input::GetKey(window, GLFW_KEY_LEFT))
-            player.rotation += glm::radians(5.0f);
-        if (Input::GetMouseButton(window, GLFW_MOUSE_BUTTON_1))
-        {
-            wallBottom.pos.x = Input::GetMouseXPos(window);
-            wallBottom.pos.y = Input::GetMouseYPos(window);
-            wallBottom.velocity = { 0.0f,0.0f };
-        }
-
+            player.rotation += glm::radians(200.0f) * deltaTime;
+        
         for (int i = 0; i < Registry::validIndices.size(); i++)
         {
             Entity* e = Registry::getEntityByKey(i);
@@ -246,34 +229,54 @@ void Application::Run()
                 }
             }
         }
-        for (int i = 0; i < Registry::validIndices.size(); i++)
+        for (int index = 0; index < Registry::validIndices.size(); index++)
         {
+            int i = Registry::validIndices[index];
             Entity* e = Registry::getEntityByKey(i);
             if (e)
             {
                 if (e->vertexCount == 4)
                 {
+                    if (e->pos.x > window->GetWidth() / 2 ||
+                        e->pos.x < -window->GetWidth() / 2 ||
+                        e->pos.y > window->GetHeight() / 2 ||
+                        e->pos.y < -window->GetHeight() / 2
+                        && e->id != 2
+                        )
+                    {
+                         Registry::deleteEntity(e->id);
+                        continue;
+                    }
                     Renderer::BeginScene(m_Camera);
                     Renderer::DrawRotatedQuad(e->pos, e->size, e->rotation, e->colour);
+                    
                     Renderer::EndScene();
                 }
                 if (e->mass)
                 {
                     e->UpdateTransform(e, deltaTime); //no mass means its a wall, so it doesnt move
                 }
-                for (int j = 0; j < Registry::validIndices.size(); j++)
+                
+                for (int j = i+1; j < Registry::validIndices.size(); j++)
                 {
+                    
                     Entity* other = Registry::getEntityByKey(j);
-                    if (other && j != i)
+                    if (other)
                     {
-                        Renderer::BeginScene(m_Camera);
-                        CollisionOverlapData overlapData = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
-                        if (!(overlapData.AToCollisionPoint.x == 0.0f && overlapData.AToCollisionPoint.y == 0.0f))
-                        {
-                            Collision::ResolveCollision(*e, *other, overlapData.AToCollisionPoint, overlapData.normalOffB);
+                        if (
+                            e->pos.x - e->AABBWidth < other->pos.x + other->AABBWidth &&
+                            e->pos.x + e->AABBWidth > other->pos.x - other->AABBWidth &&
+                            e->pos.y + e->AABBHeight > other->pos.y - other->AABBHeight &&
+                            e->pos.y - e->AABBHeight < other->pos.y + other->AABBHeight
+                            )
+                        {                       
+                            CollisionOverlapData overlapData = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
+                            if (!(overlapData.AToCollisionPoint.x == 0.0f && overlapData.AToCollisionPoint.y == 0.0f))
+                            {
+                                Collision::ResolveCollisionNoRotation(*e, *other, overlapData.AToCollisionPoint, overlapData.normalOffB);
+                            }
                         }
-                        Renderer::EndScene();
-                    }
+                    }                 
                 }
             }
         }
@@ -287,11 +290,9 @@ void Application::Run()
         Renderer::BeginScene(m_Camera);
         ParticleSystem::Draw((float)deltaTime);
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
-        //Renderer::DrawQuad(wallBottom.pos, wallBottom.size);
-        //Renderer::DrawLine(player.pos, { test.x + player.pos.x, test.y + player.pos.y ,player.pos.z });
 
         Renderer::EndScene();
-        fps.SetText("fps: "+ std::to_string(1/deltaTime).substr(0,2));
+        fps.SetText(std::to_string(deltaTime*1000) + "ms");
         Renderer::RenderUI(m_UIManager, m_Camera);
         window->OnUpdate();
     }

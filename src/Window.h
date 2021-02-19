@@ -34,8 +34,8 @@ public:
 	inline void SetEventCallback(const EventCallbackFunc& func) { m_Data.CallbackFunc = func; }
 
 	inline bool IsVSync() { return m_Data.IsVSync; }
-	inline uint32_t GetWidth() { return m_Data.Width; }
-	inline uint32_t GetHeight() { return m_Data.Height; }
+	inline int GetWidth() { return m_Data.Width; }
+	inline int GetHeight() { return m_Data.Height; }
 
 	void SetDimensions(uint32_t x, uint32_t y);
 
@@ -45,8 +45,8 @@ private:
 
 	struct WindowData
 	{
-		uint32_t Width;
-		uint32_t Height;
+		int32_t Width;
+		int32_t Height;
 		std::string Title;
 		EventCallbackFunc CallbackFunc;
 		bool IsVSync;

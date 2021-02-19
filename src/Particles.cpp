@@ -22,8 +22,6 @@ void ParticleSystem::Add(uint32_t amount)
 	{
 		s_ParticlePool[s_ParticleIndex] = s_BaseParticle;
 		s_ParticlePool[s_ParticleIndex].IsActive = true;
-		//s_ParticlePool[s_ParticleIndex].Velocity.x += (Random::Float() + 1.0f) * 300.0f;
-		//s_ParticlePool[s_ParticleIndex].Velocity.y += (Random::Float() + 1.0f) * 300.0f;
 		s_ParticleIndex = (s_ParticleIndex - 1) % s_ParticlePool.size();
 	} 
 }
