@@ -183,6 +183,8 @@ void Application::Run()
 
     double lastTime = glfwGetTime();
     double deltaTime = 0, nowTime = 0;
+    double fpsTime = lastTime;
+    double prevfpsTime = glfwGetTime();
 
     while (IsRunning)
     {
@@ -288,9 +290,15 @@ void Application::Run()
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
 
         Renderer::EndScene();
-        sprintf_s(dt.text, dt.textLength, "%.2fms", deltaTime * 1000);
-        sprintf_s(fps.text, fps.textLength,"%.0ffps", (1 / deltaTime));
+        if (fpsTime - prevfpsTime > 0.2)
+        {
+            prevfpsTime = glfwGetTime();
+            fpsTime = prevfpsTime;
+            sprintf_s(dt.text, dt.textLength, "%.2fms", deltaTime * 1000);
+            sprintf_s(fps.text, fps.textLength, "%.0ffps", (1 / deltaTime));
+        }
         Renderer::RenderUI(m_UIManager, m_Camera);
+        fpsTime += deltaTime;
         window->OnUpdate();
     }
 }
