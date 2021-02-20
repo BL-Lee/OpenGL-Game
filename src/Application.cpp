@@ -21,7 +21,7 @@ std::shared_ptr<Window> window;
 
 Application::Application()
 {
-    WindowProps props(1366, 768, "Bababooey", false);
+    WindowProps props(640,480,"Bababooey", false);
     window = std::make_shared<Window>(props);
     window->SetEventCallback(BIND_EVENT_FUNC(OnEvent));
     m_Camera = std::make_shared<OrthoCamera>((float)props.Width, (float)props.Height);
@@ -129,8 +129,10 @@ void Application::Run()
     std::shared_ptr<Texture> outlineTex = std::make_shared<Texture>("res/textures/InvertexOutline.png");
 
     std::shared_ptr<Font> m_silkFont = std::make_shared<Font>();
-    TextBox fps({ -250.0f,0.0f, 0.22f }, { 500.0f,50.0f }, { 1.0f,0.5f,1.0f,1.0f }, "Ui Element its", m_silkFont);
+    TextBox fps({ -window->GetWidth() / 2, window->GetHeight() / 2 - 20, 0.22f }, { 100.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "123456789101111111111111111111111111111111111111111111111111111111111111111111111111111111213", m_silkFont);
+    TextBox dt({ -window->GetWidth() / 2, window->GetHeight() / 2 - 40, 0.22f }, { 100.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "12345678910111111111111111111111111111111111111111111111111111111111111111111111111111213", m_silkFont);
     m_UIManager.AddTextBox(fps);
+    m_UIManager.AddTextBox(dt);
 
     glm::vec2 basevertices[3] = { glm::vec2(1.0f, 0.0f), glm::vec2(-0.5f, -0.86602540378f), glm::vec2(-0.5f, 0.86602540378f) };
 
@@ -144,7 +146,6 @@ void Application::Run()
     player.mass = 1.0f;
     player.inverseMass = 1.0f;
     player.restitution = 0.0f;
-    player.gravityStrength = 0;//9.81f * 10;
     player.gravityDirection = { 0.0f, -1.0f };
     player.vertexCount = 3;
     SetEntityAABB(&player);
@@ -154,21 +155,22 @@ void Application::Run()
                          { 0.5f, -0.5f},
                          { 0.5f,  0.5f},
                          { -0.5f, 0.5f } };
-    Entity asteroid = {};
-    asteroid.pos = { 0.0f,-300.0f,0.0f };
-    asteroid.size = { 10.0f,5.0f };
-    asteroid.rotation = 0.0f;
-    asteroid.vertexCount = 4;
-    asteroid.angularVelocity = 0.0f;
-    SetEntityAABB(&asteroid);
-    memcpy(asteroid.localVertices, box, sizeof(glm::vec2) * asteroid.vertexCount); //make this a function
-    SetEntityMass(&asteroid, 1.0f);
-    asteroid.UpdateTransform = UpdateTransform;
-    asteroid.restitution = 0.2f; 
-    asteroid.colour = { 1.0f,1.0f,1.0f,1.0f };
+    Entity* asteroid = (Entity*)calloc(1, sizeof(Entity));
+    asteroid->pos = { 0.0f,-300.0f,0.0f };
+    asteroid->size = { 10.0f,5.0f };
+    asteroid->rotation = 0.0f;
+    asteroid->vertexCount = 4;
+    asteroid->angularVelocity = 0.0f;
+    SetEntityAABB(asteroid);
+    CopyVertices(asteroid, box, 4);
+    SetEntityMass(asteroid, 1.0f);
+    asteroid->UpdateTransform = UpdateTransform;
+    asteroid->restitution = 0.2f; 
+    asteroid->colour = { 1.0f,1.0f,1.0f,1.0f };
     
     Entity bullet = {};
     bullet.size = { 2.0f, 2.0f };
+    SetEntityAABB(&bullet);
     CopyVertices(&bullet, box, 4);
     SetEntityMass(&bullet, 1.0f);
     bullet.UpdateTransform = UpdateTransform;
@@ -176,7 +178,7 @@ void Application::Run()
     bullet.colour = { 1.0f,1.0f,1.0f,1.0f };
 
     Registry::addEntity(&player);
-    Registry::addEntity(&asteroid);
+    Registry::addEntity(asteroid);
     Registry::addEntity(&bullet);
 
     double lastTime = glfwGetTime();
@@ -195,11 +197,11 @@ void Application::Run()
         {
             Particle& p = ParticleSystem::GetbaseParticle();
             p.Pos = Input::GetMousePosOpenGLCoords(window, m_Camera);
+            printf("%f, %f\n", Input::GetMouseXPos(window), Input::GetMouseYPos(window));
             ParticleSystem::Add(1);
         }
         if (Input::GetKey(window, GLFW_KEY_UP))
-        {
-            
+        { 
             glm::vec2 direction = { cos(player.rotation), sin(player.rotation) };
             
             Particle& p = ParticleSystem::GetbaseParticle();
@@ -209,10 +211,6 @@ void Application::Run()
             ParticleSystem::Add(1);
             
             player.Accelerate(&player, player.rotation, deltaTime);
-        }
-        else
-        {
-            player.velocity = { 0.0f,0.0f };
         }
         if (Input::GetKey(window, GLFW_KEY_RIGHT))
             player.rotation -= glm::radians(200.0f) * deltaTime;
@@ -229,6 +227,7 @@ void Application::Run()
                 }
             }
         }
+        Renderer::BeginScene(m_Camera);
         for (int index = 0; index < Registry::validIndices.size(); index++)
         {
             int i = Registry::validIndices[index];
@@ -241,16 +240,15 @@ void Application::Run()
                         e->pos.x < -window->GetWidth() / 2 ||
                         e->pos.y > window->GetHeight() / 2 ||
                         e->pos.y < -window->GetHeight() / 2
-                        && e->id != 2
                         )
                     {
                          Registry::deleteEntity(e->id);
                         continue;
                     }
-                    Renderer::BeginScene(m_Camera);
+
                     Renderer::DrawRotatedQuad(e->pos, e->size, e->rotation, e->colour);
                     
-                    Renderer::EndScene();
+
                 }
                 if (e->mass)
                 {
@@ -280,19 +278,18 @@ void Application::Run()
                 }
             }
         }
-
-
+ 
         if (player.rotation > glm::two_pi<float>()) //really dont like this, add math constant header with pi as a float so i dont need to do this <float>() crap
             player.rotation -= glm::two_pi<float>();
         if (player.rotation < glm::two_pi<float>())
             player.rotation += glm::two_pi<float>();
 
-        Renderer::BeginScene(m_Camera);
         ParticleSystem::Draw((float)deltaTime);
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
 
         Renderer::EndScene();
-        fps.SetText(std::to_string(deltaTime*1000) + "ms");
+        sprintf_s(dt.text, dt.textLength, "%.2fms", deltaTime * 1000);
+        sprintf_s(fps.text, fps.textLength,"%.0ffps", (1 / deltaTime));
         Renderer::RenderUI(m_UIManager, m_Camera);
         window->OnUpdate();
     }

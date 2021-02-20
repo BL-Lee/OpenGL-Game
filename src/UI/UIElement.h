@@ -31,20 +31,22 @@ public:
 class TextBox : public UIElement
 {
 public:
-    std::string text;
+    char* text;    
     const std::shared_ptr<Font>& font;
     float textSize;
     glm::vec4 textColour;
-
-    TextBox(const glm::vec3 l, const glm::vec2 s, const glm::vec4 c, const std::string& t, const std::shared_ptr<Font>& fnt, glm::vec4 txtC = { 1.0f,1.0f,1.0f,1.0f })
+    int textLength;
+    TextBox(const glm::vec3 l, const glm::vec2 s, const glm::vec4 c, const char* t, const std::shared_ptr<Font>& fnt, glm::vec4 txtC = { 1.0f,1.0f,1.0f,1.0f })
         :UIElement(l, s, c), text(), font(fnt), textSize(1.0f), textColour(txtC)
     {
-        text.assign(t);
+        text = (char*)malloc(strlen(t) + 1);
+        textLength = strlen(text + 1);
+        strcpy_s(text, textLength, t);        
         type = UIType::textBox;
     }
-    void SetText(const std::string& txt)
+    void SetText(char* t)
     {
-        text.assign(txt);
+        strcpy_s(text, textLength,  t);
     }
     void SetTextSize(float s) { textSize = s; }
 

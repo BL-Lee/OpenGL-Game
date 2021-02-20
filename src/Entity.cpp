@@ -10,7 +10,7 @@ void UpdateTransform(Entity* e, float deltaTime)
 	e->pos.x += e->velocity.x * deltaTime;
 	e->pos.y += e->velocity.y * deltaTime;
 	e->rotation += e->angularVelocity * deltaTime;
-	e->velocity += e->gravityDirection * e->gravityStrength * deltaTime;
+	e->velocity += e->gravityDirection * deltaTime;
 }
 void SetEntityMass(Entity* e, float m)
 {

@@ -30,7 +30,6 @@ struct Entity
 	glm::vec2 localVertices[MAX_RIGIDBODY_HULL];
 	int vertexCount;
 	glm::vec2 gravityDirection;
-	float gravityStrength; //just use 0 for disabling
 
 	//Movement
 	void (*Accelerate)(Entity* e, float rot, float deltaTime);

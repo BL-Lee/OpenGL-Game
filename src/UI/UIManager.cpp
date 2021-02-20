@@ -6,7 +6,7 @@ void UIManager::AddBaseElement(const glm::vec3& location, const glm::vec2& size,
 	UIElement e(location, size, colour);
 	m_UIElements.push_back(&e);
 }
-void UIManager::AddTextBox(const glm::vec3 location, const glm::vec2 size, const glm::vec4 colour, const std::string& text,
+void UIManager::AddTextBox(const glm::vec3 location, const glm::vec2 size, const glm::vec4 colour, const char* text,
 	const std::shared_ptr<Font>& font, const glm::vec4 textColour = { 1.0f,1.0f,1.0f,1.0f })
 {
 	//For now its okay because im not removing any elements,

@@ -130,6 +130,12 @@ void Renderer::BeginScene()
 }
 void Renderer::BeginScene(const std::shared_ptr<OrthoCamera>& camera, uint32_t renderType)
 {
+    //Honestly this is a big no no. Its not scalable for other shaders
+    //Later should implement a way to render using multiple shaders, sort them and make
+    //draw calls based on those.
+    //This would also fix the issue of starting a scene and ending a scene multiple times
+    //Maybe something like 
+    // Start -> add all your shapes regardless of shader -> Draw() -> sorts added stuff in order of shaders -> DrawQuad() and stuff
     switch (renderType)
     {
     case 0:
