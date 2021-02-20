@@ -23,7 +23,7 @@ glm::vec2 Collision::getSupport(glm::vec2 shape[], int size, glm::vec2 direction
 			furthestVertex = shape[i];
 		}
 	}
-	//ASSERT(furthestVertex.x != 0.0f);
+ 	ASSERT(furthestVertex.x != 0.0f);
 	return furthestVertex;
 }
 /*
@@ -275,14 +275,14 @@ void Collision::ResolveCollision(Entity& A, Entity& B, glm::vec2 collVector, glm
 	glm::vec2 contactA = collVector; //- glm::vec2{ A.pos.x, A.pos.y };
 	glm::vec2 contactB = glm::vec2{ B.pos.x, B.pos.y } - (collVector + glm::vec2{ A.pos.x, A.pos.y });
 
-	Renderer::DrawLine({ A.pos.x, A.pos.y, A.pos.z - 0.01f }, { collVector.x + A.pos.x , collVector.y + A.pos.y , A.pos.z - 0.01f }, 2.0, { 1.0f,0.0f,1.0f,1.0f });
+	//Renderer::DrawLine({ A.pos.x, A.pos.y, A.pos.z - 0.01f }, { collVector.x + A.pos.x , collVector.y + A.pos.y , A.pos.z - 0.01f }, 2.0, { 1.0f,0.0f,1.0f,1.0f });
 	//Renderer::DrawLine({ B.pos.x, B.pos.y, B.pos.z +0.01f }, { B.pos.x - collVector.x - A.pos.x , B.pos.y - collVector.y - A.pos.y , B.pos.z + 0.01f }, 2.0);
 
 	//relative velocity
 	glm::vec2 relV = (B.velocity + CrossProduct2D(B.angularVelocity, contactB)) -
 		(A.velocity + CrossProduct2D(A.angularVelocity, contactA));
 
-	Renderer::DrawLine({ contactA, 0.0f }, { (n - contactA) * 10.0f, 0.0f });
+	//Renderer::DrawLine({ contactA, 0.0f }, { (n - contactA) * 10.0f, 0.0f });
 
 	glm::vec2 normal = glm::normalize(n + contactA); 
 	//projects the velocity along the normal

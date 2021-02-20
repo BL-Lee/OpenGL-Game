@@ -34,18 +34,26 @@ Entity* CloneEntity(Entity* e)
 }
 void UpdateWorldVertices(Entity* e)
 {
-	glm::mat4 result;
-	glm::mat4 identity = glm::identity<glm::mat4>(); 
 	//for the love of god make a math library, 
 	//it's in 2d so you're always rotating around Z axis,
 	//never scaling in z direction
 	//you could do this with a mat3 but glm doesnt support that
-	result = glm::translate(identity, e->pos)
-		* glm::rotate(identity, e->rotation, { 0.0f,0.0f,1.0f })
-		* glm::scale(identity, { e->size.x,e->size.y,1.0f });
+	glm::mat4 transform = glm::identity<glm::mat4>();
+
+	double sinRot = sin(e->rotation);
+	double cosRot = cos(e->rotation);
+
+	transform[0][0] = e->size.x * cosRot;
+	transform[1][0] = e->size.y * -sinRot;
+	transform[3][0] = e->pos.x;
+	transform[0][1] = e->size.x * sinRot;
+	transform[1][1] = e->size.y * cosRot;
+	transform[3][1] = e->pos.y;
+	transform[3][2] = e->pos.z;
+
 	for (int i = 0; i < e->vertexCount; i++)
 	{
-		e->vertices[i] = result * glm::vec4{ e->localVertices[i].x, e->localVertices[i].y, 0.0f, 1.0f };
+		e->vertices[i] = transform * glm::vec4{ e->localVertices[i].x, e->localVertices[i].y, 0.0f, 1.0f };
 	}
 }
 void CopyVertices(Entity* e, glm::vec2* vertices, int count)

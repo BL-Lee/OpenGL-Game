@@ -202,8 +202,27 @@ void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const std::
     float texIndex = GetOrAddTextureIndex(tex);
 
     //Don't really need to do a matrix multiplication if we're not rotating
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos)      
-        * glm::scale(glm::mat4(1.0f), { size.x,size.y,1.0f });
+  
+    glm::mat4 transform = glm::identity<glm::mat4>();
+    transform[0][0] = size.x ;
+    //transform[1][0] = 0;
+    //transform[2][0] = 0;
+    transform[3][0] = pos.x;
+
+    //transform[0][1] = 0;
+    transform[1][1] = size.y;
+    //transform[2][1] = 0;
+    transform[3][1] = pos.y;
+
+    //transform[0][2] = 0;
+    //transform[1][2] = 0;
+    //transform[2][2] = 1;
+    transform[3][2] = pos.z;
+
+    //transform[0][3] = 0;
+    //transform[1][3] = 0;
+    //transform[2][3] = 0;
+    //transform[3][3] = 1;
 
     s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[0];
     s_RendererData->VertexBufferPtr->TexCoord = { 0.0f,0.0f };
@@ -251,9 +270,35 @@ void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, floa
     float texIndex = GetOrAddTextureIndex(tex);
 
     //can just explicitly write out the matrix most likely THEN DO THAT
+    /*
+        OLD WAY >>>
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos)
         * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f,0.0f,1.0f })
         * glm::scale(glm::mat4(1.0f), { size.x,size.y,1.0f });
+    */
+    double sinRot = sin(rotation);
+    double cosRot = cos(rotation);
+
+    glm::mat4 transform = glm::identity<glm::mat4>();
+    transform[0][0] = size.x * cosRot;
+    transform[1][0] = size.y * -sinRot;
+    //transform[2][0] = 0;
+    transform[3][0] = pos.x;
+     
+    transform[0][1] = size.x * sinRot;
+    transform[1][1] = size.y * cosRot;
+    //transform[2][1] = 0;
+    transform[3][1] = pos.y;
+     
+    //transform[0][2] = 0;
+    //transform[1][2] = 0;
+    //transform[2][2] = 1;
+    transform[3][2] = pos.z;
+     
+    //transform[0][3] = 0;
+    //transform[1][3] = 0;
+    //transform[2][3] = 0;
+    //transform[3][3] = 1;
 
     s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[0];
     s_RendererData->VertexBufferPtr->TexCoord = { 0.0f,0.0f };
@@ -310,8 +355,27 @@ void Renderer::DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const s
 
     float texIndex = GetOrAddTextureIndex(tex);
 
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos)
-        * glm::scale(glm::mat4(1.0f), { size.x,size.y,1.0f });
+    glm::mat4 transform = glm::identity<glm::mat4>();
+    transform[0][0] = size.x;
+    //transform[1][0] = 0;
+    //transform[2][0] = 0;
+    transform[3][0] = pos.x;
+
+    //transform[0][1] = 0;
+    transform[1][1] = size.y;
+    //transform[2][1] = 0;
+    transform[3][1] = pos.y;
+
+    //transform[0][2] = 0;
+    //transform[1][2] = 0;
+    //transform[2][2] = 1;
+    transform[3][2] = pos.z;
+
+    //transform[0][3] = 0;
+    //transform[1][3] = 0;
+    //transform[2][3] = 0;
+    //transform[3][3] = 1;
+   
 
     s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[4];
     s_RendererData->VertexBufferPtr->TexCoord = { 0.0f,0.0f };
@@ -351,9 +415,30 @@ void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, 
 
     float texIndex = GetOrAddTextureIndex(tex);
 
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos)
-        * glm::rotate(glm::mat4(1.0f),rotation, { 0.0f,0.0f,1.0f })
-        * glm::scale(glm::mat4(1.0f), { size.x,size.y,1.0f });
+    double sinRot = sin(rotation);
+    double cosRot = cos(rotation);
+
+    glm::mat4 transform = glm::identity<glm::mat4>();
+    transform[0][0] = size.x * cosRot;
+    transform[1][0] = size.y * -sinRot;
+    //transform[2][0] = 0;
+    transform[3][0] = pos.x;
+
+    transform[0][1] = size.x * sinRot;
+    transform[1][1] = size.y * cosRot;
+    //transform[2][1] = 0;
+    transform[3][1] = pos.y;
+
+    //transform[0][2] = 0;
+    //transform[1][2] = 0;
+    //transform[2][2] = 1;
+    transform[3][2] = pos.z;
+
+    //transform[0][3] = 0;
+    //transform[1][3] = 0;
+    //transform[2][3] = 0;
+    //transform[3][3] = 1;
+
 
     s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[4];
     s_RendererData->VertexBufferPtr->TexCoord = { 0.0f,0.0f };

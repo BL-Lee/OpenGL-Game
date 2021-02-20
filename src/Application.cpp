@@ -21,7 +21,7 @@ std::shared_ptr<Window> window;
 
 Application::Application()
 {
-    WindowProps props(640,480,"Bababooey", false);
+    WindowProps props(1366,768,"Bababooey", false);
     window = std::make_shared<Window>(props);
     window->SetEventCallback(BIND_EVENT_FUNC(OnEvent));
     m_Camera = std::make_shared<OrthoCamera>((float)props.Width, (float)props.Height);
@@ -94,8 +94,9 @@ bool Application::OnKeyPress(KeyPressedEvent& e)
         {
             Entity* bullet = Registry::cloneEntity(2);  //for bullet for now CLEANUP CLEANUP
             Entity* player = Registry::getEntityByKey(0); // player
-            bullet->velocity = player->velocity + glm::vec2{0.0f, 100.0f};
-            bullet->pos = player->pos;
+            
+            bullet->velocity = player->velocity + glm::vec2{ cos(player->rotation), sin(player->rotation) } * 100.0f;
+            bullet->pos = player->pos + glm::vec3{ cos(player->rotation), sin(player->rotation),0.0f } * 5.0f;
         }break;
     }
     return true;
@@ -139,8 +140,9 @@ void Application::Run()
     glm::vec2 basevertices[3] = { glm::vec2(1.0f, 0.0f), glm::vec2(-0.5f, -0.86602540378f), glm::vec2(-0.5f, 0.86602540378f) };
 
     Entity player = {};
-    player.pos = { 0.0f,0.0f,-0.1f };
+    player.pos = { 23.232323f,45.5f,-0.1f };
     player.size = { 20.0f,10.0f };
+    player.rotation = 1.3f;
     player.acceleration = 200.0f;
     player.colour = { 0.7f,0.1f,0.2f,1.0f };
     player.Accelerate = AccelerateEntityForward;
@@ -168,10 +170,10 @@ void Application::Run()
     SetEntityMass(asteroid, 1.0f);
     asteroid->UpdateTransform = UpdateTransform;
     asteroid->restitution = 0.2f; 
-    asteroid->colour = { 1.0f,1.0f,1.0f,1.0f };
+    asteroid->colour = { 1.0f,0.0f,0.0f,1.0f };
     
     Entity bullet = {};
-    bullet.size = { 2.0f, 2.0f };
+    bullet.size = { 10.0f, 10.0f };
     SetEntityAABB(&bullet);
     CopyVertices(&bullet, box, 4);
     SetEntityMass(&bullet, 1.0f);
@@ -187,6 +189,7 @@ void Application::Run()
     double deltaTime = 0, nowTime = 0;
     double fpsTime = lastTime;
     double prevfpsTime = glfwGetTime();
+    double particleCooldown = lastTime;
 
     while (IsRunning)
     {
@@ -200,19 +203,22 @@ void Application::Run()
         if (Input::GetMouseButton(window, GLFW_MOUSE_BUTTON_1))
         {
             Particle& p = ParticleSystem::GetbaseParticle();
-            p.Pos = Input::GetMousePosOpenGLCoords(window, m_Camera);
-            printf("%f, %f\n", Input::GetMouseXPos(window), Input::GetMouseYPos(window));
+            p.Pos = Input::GetMousePosOpenGLCoords(window, m_Camera);           
             ParticleSystem::Add(1);
         }
         if (Input::GetKey(window, GLFW_KEY_UP))
         { 
             glm::vec2 direction = { cos(player.rotation), sin(player.rotation) };
             
-            Particle& p = ParticleSystem::GetbaseParticle();
-            p.Pos      = player.pos;
-            p.Rotation = player.rotation;
-            p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
-            ParticleSystem::Add(1);
+            if (nowTime - particleCooldown > 0.016)
+            {
+                particleCooldown = nowTime;
+                Particle& p = ParticleSystem::GetbaseParticle();
+                p.Pos = player.pos;
+                p.Rotation = player.rotation;
+                p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
+                ParticleSystem::Add(1);
+            }
             
             player.Accelerate(&player, player.rotation, deltaTime);
         }
@@ -223,7 +229,7 @@ void Application::Run()
         
         for (int i = 0; i < Registry::validIndices.size(); i++)
         {
-            Entity* e = Registry::getEntityByKey(i);
+            Entity* e = Registry::getEntityByKey(Registry::validIndices[i]);
             {
                 if (e)
                 {
@@ -248,6 +254,7 @@ void Application::Run()
                         )
                     {
                         Registry::deleteEntity(e->id);
+                        index--;
                         continue;
                     }
                 }
@@ -256,9 +263,9 @@ void Application::Run()
                     e->UpdateTransform(e, deltaTime); //no mass means its a wall, so it doesnt move
                 }
                 
-                for (int j = i+1; j < Registry::validIndices.size(); j++)
+                for (int otherIndex = index+1; otherIndex < Registry::validIndices.size(); otherIndex++)
                 {
-                    
+                    int j = Registry::validIndices[otherIndex];
                     Entity* other = Registry::getEntityByKey(j);
                     if (other)
                     {
@@ -268,18 +275,24 @@ void Application::Run()
                             e->pos.y + e->AABBHeight > other->pos.y - other->AABBHeight &&
                             e->pos.y - e->AABBHeight < other->pos.y + other->AABBHeight
                             )
-                        {                       
+                        {             
+                            
+                            //printf("Collidingboi %d and %d\n", e->id, other->id);
                             CollisionOverlapData overlapData = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
                             if (!(overlapData.AToCollisionPoint.x == 0.0f && overlapData.AToCollisionPoint.y == 0.0f))
                             {
-                                Collision::ResolveCollisionNoRotation(*e, *other, overlapData.AToCollisionPoint, overlapData.normalOffB);
+                                Collision::ResolveCollision(*e, *other, overlapData.AToCollisionPoint, overlapData.normalOffB);
+                                Renderer::DrawQuad(e->pos, { e->AABBWidth, e->AABBHeight }, { 0.0f,1.0f,0.0f,1.0f });
                             }
                         }
                     }                 
                 }
                 double draw = glfwGetTime();
                 Renderer::DrawRotatedQuad(e->pos, e->size, e->rotation, e->colour);
+                //Renderer::DrawQuad(e->pos, { e->AABBWidth, e->AABBHeight }, { 1.0f,0.0f,1.0f,1.0f });
+                
                 double drawdt = glfwGetTime() - draw;
+                
                 renddt += drawdt;
             }
         }
