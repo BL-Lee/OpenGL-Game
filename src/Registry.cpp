@@ -18,7 +18,6 @@ uint32_t Registry::addEntity(Entity* e)
 		validityArray = (uint32_t*)realloc(validityArray, sizeof(uint32_t*) * maxSize * 2);
 		memset(validityArray + maxSize, 0, sizeof(uint32_t*) * maxSize);
 		maxSize *= 2;
-		printf("RESIZED \nNEW SIZE: %d", maxSize);
 	}
 	while (validityArray[idCounter])
 	{
@@ -62,7 +61,6 @@ void Registry::deleteEntity(uint32_t key)
 			if (validIndices[i] == key)
 			{
 				validIndices.erase(validIndices.begin() + i);
-				printf("DELETED BOYO %d\n", key);
 				deleted = true;
 				break;
 			}

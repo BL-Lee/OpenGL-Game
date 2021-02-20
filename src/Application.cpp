@@ -96,7 +96,6 @@ bool Application::OnKeyPress(KeyPressedEvent& e)
             Entity* player = Registry::getEntityByKey(0); // player
             bullet->velocity = player->velocity + glm::vec2{0.0f, 100.0f};
             bullet->pos = player->pos;
-            printf("Entity added! key: %d\n", bullet->id);
         }break;
     }
     return true;
@@ -129,11 +128,14 @@ void Application::Run()
     std::shared_ptr<Texture> outlineTex = std::make_shared<Texture>("res/textures/InvertexOutline.png");
 
     std::shared_ptr<Font> m_silkFont = std::make_shared<Font>();
-    TextBox fps({ -window->GetWidth() / 2, window->GetHeight() / 2 - 20, 0.22f }, { 100.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "123456789101111111111111111111111111111111111111111111111111111111111111111111111111111111213", m_silkFont);
-    TextBox dt({ -window->GetWidth() / 2, window->GetHeight() / 2 - 40, 0.22f }, { 100.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "12345678910111111111111111111111111111111111111111111111111111111111111111111111111111213", m_silkFont);
+    TextBox fps({ -window->GetWidth() / 2, window->GetHeight() / 2 - 20, 0.22f }, { 100.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "123456789101111111111111111111111111111111111111111111111111", m_silkFont);
+    TextBox dt({ -window->GetWidth() / 2, window->GetHeight() / 2 - 40, 0.22f }, { 100.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "123456789101111111111111111111111111111111111111111111111113", m_silkFont);
+    TextBox gpudt({ -window->GetWidth() / 2, window->GetHeight() / 2 - 60, 0.22f }, { 140.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "1234567891011111111111111111111111111111111111111111111111113", m_silkFont);
+    TextBox rendererdt({ -window->GetWidth() / 2, window->GetHeight() / 2 - 80, 0.22f }, { 160.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "1234567891011111111111111111111111111111111111111111111111113", m_silkFont);
     m_UIManager.AddTextBox(fps);
     m_UIManager.AddTextBox(dt);
-
+    m_UIManager.AddTextBox(gpudt);
+    m_UIManager.AddTextBox(rendererdt);
     glm::vec2 basevertices[3] = { glm::vec2(1.0f, 0.0f), glm::vec2(-0.5f, -0.86602540378f), glm::vec2(-0.5f, 0.86602540378f) };
 
     Entity player = {};
@@ -230,6 +232,7 @@ void Application::Run()
             }
         }
         Renderer::BeginScene(m_Camera);
+        double renddt = 0;
         for (int index = 0; index < Registry::validIndices.size(); index++)
         {
             int i = Registry::validIndices[index];
@@ -244,13 +247,9 @@ void Application::Run()
                         e->pos.y < -window->GetHeight() / 2
                         )
                     {
-                         Registry::deleteEntity(e->id);
+                        Registry::deleteEntity(e->id);
                         continue;
                     }
-
-                    Renderer::DrawRotatedQuad(e->pos, e->size, e->rotation, e->colour);
-                    
-
                 }
                 if (e->mass)
                 {
@@ -278,6 +277,10 @@ void Application::Run()
                         }
                     }                 
                 }
+                double draw = glfwGetTime();
+                Renderer::DrawRotatedQuad(e->pos, e->size, e->rotation, e->colour);
+                double drawdt = glfwGetTime() - draw;
+                renddt += drawdt;
             }
         }
  
@@ -286,17 +289,24 @@ void Application::Run()
         if (player.rotation < glm::two_pi<float>())
             player.rotation += glm::two_pi<float>();
 
+        double draw = glfwGetTime();
         ParticleSystem::Draw((float)deltaTime);
         Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
-
+        double drawdt = glfwGetTime() - draw;
+        renddt += drawdt;
+        double gpuTime = glfwGetTime();
         Renderer::EndScene();
+        double gpuTimeElapsed = glfwGetTime() - gpuTime;
         if (fpsTime - prevfpsTime > 0.2)
         {
             prevfpsTime = glfwGetTime();
             fpsTime = prevfpsTime;
             sprintf_s(dt.text, dt.textLength, "%.2fms", deltaTime * 1000);
             sprintf_s(fps.text, fps.textLength, "%.0ffps", (1 / deltaTime));
+            sprintf_s(gpudt.text, gpudt.textLength, "gpu time: %.2fms", (gpuTimeElapsed*1000));
+            sprintf_s(rendererdt.text, rendererdt.textLength, "renderer time: %.2fms", (renddt * 1000));
         }
+        renddt = 0;
         Renderer::RenderUI(m_UIManager, m_Camera);
         fpsTime += deltaTime;
         window->OnUpdate();

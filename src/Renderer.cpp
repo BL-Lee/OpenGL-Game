@@ -201,7 +201,7 @@ void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const std::
 
     float texIndex = GetOrAddTextureIndex(tex);
 
-    //Don't really need to do a matrix multiplication if we're not rotating, but oh well
+    //Don't really need to do a matrix multiplication if we're not rotating
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos)      
         * glm::scale(glm::mat4(1.0f), { size.x,size.y,1.0f });
 
@@ -250,7 +250,7 @@ void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, floa
 
     float texIndex = GetOrAddTextureIndex(tex);
 
-    //can just explicitly write out the matrix most likely
+    //can just explicitly write out the matrix most likely THEN DO THAT
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos)
         * glm::rotate(glm::mat4(1.0f), rotation, { 0.0f,0.0f,1.0f })
         * glm::scale(glm::mat4(1.0f), { size.x,size.y,1.0f });
@@ -405,7 +405,7 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, float widt
 * TODO: weird 1 pixel artifact on sides of some letters? (try e in arial)
 * Obviously this only works for languages that write left to right
 */
-void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const std::string& text, const std::shared_ptr<Font>& f, const glm::vec4& colour)
+void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const char* text, const std::shared_ptr<Font>& f, const glm::vec4& colour)
 {
     
     std::shared_ptr<Texture> atlas = f->GetAtlas();
@@ -418,9 +418,10 @@ void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const std
     glm::vec2 lettersize = { size.y / f->GetPtSize(), size.y / f->GetPtSize() };
     float lineLength = 0.0f;
 
-    std::string::const_iterator c;
+    char c;
+    const char* p = text;
     std::array<FontCharacterinfo,128>& chars = f->GetChars();
-    for (c = text.begin(); c != text.end(); c++)
+    for (c = *p; c; c = *++p)
     {
         //Check to make sure this doesnt need to be put in a new batch
         if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
@@ -429,7 +430,7 @@ void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const std
             FlushAndReset();
             texIndex = GetOrAddTextureIndex(atlas);
         }
-        FontCharacterinfo i = chars[*c];
+        FontCharacterinfo i = chars[c];
         
         float x2 = xOffset + i.bitmapL * lettersize.x;
         float y2 = -yOffset - i.bitmapT * lettersize.y;

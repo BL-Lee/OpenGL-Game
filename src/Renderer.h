@@ -33,7 +33,7 @@ public:
 
     static void DrawLine(const glm::vec3& start, const glm::vec3& end, float width = 2.0f, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
 
-    static void RenderText(const glm::vec3& pos, const glm::vec2& size, const std::string& text, 
+    static void RenderText(const glm::vec3& pos, const glm::vec2& size, const char* text, 
         const std::shared_ptr<Font>& f, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
 
     static void BeginScene();
