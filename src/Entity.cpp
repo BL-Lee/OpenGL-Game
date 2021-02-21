@@ -61,3 +61,32 @@ void CopyVertices(Entity* e, glm::vec2* vertices, int count)
 	memcpy(e->localVertices, vertices, sizeof(glm::vec2) * count);
 	e->vertexCount = count;
 }
+void UpdateTransformationMatrix(Entity* e)
+{
+	glm::mat4 transform = glm::identity<glm::mat4>();
+
+	double sinRot = sin(e->rotation);
+	double cosRot = cos(e->rotation);
+
+	transform[0][0] = e->size.x * cosRot;
+	transform[1][0] = e->size.y * -sinRot;
+	//transform[2][0] = 0;
+	transform[3][0] = e->pos.x;
+
+	transform[0][1] = e->size.x * sinRot;
+	transform[1][1] = e->size.y * cosRot;
+	//transform[2][1] = 0;
+	transform[3][1] = e->pos.y;
+
+	//transform[0][2] = 0;
+	//transform[1][2] = 0;
+	//transform[2][2] = 1;
+	transform[3][2] = e->pos.z;
+
+	//transform[0][3] = 0;
+	//transform[1][3] = 0;
+	//transform[2][3] = 0;
+	//transform[3][3] = 1;
+
+	e->transformationMatrix = transform;
+}

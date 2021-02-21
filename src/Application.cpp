@@ -234,6 +234,7 @@ void Application::Run()
                 if (e)
                 {
                     UpdateWorldVertices(e);
+                    UpdateTransformationMatrix(e);
                 }
             }
         }
@@ -276,21 +277,16 @@ void Application::Run()
                             e->pos.y - e->AABBHeight < other->pos.y + other->AABBHeight
                             )
                         {             
-                            
-                            //printf("Collidingboi %d and %d\n", e->id, other->id);
                             CollisionOverlapData overlapData = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
                             if (!(overlapData.AToCollisionPoint.x == 0.0f && overlapData.AToCollisionPoint.y == 0.0f))
                             {
                                 Collision::ResolveCollision(*e, *other, overlapData.AToCollisionPoint, overlapData.normalOffB);
-                                Renderer::DrawQuad(e->pos, { e->AABBWidth, e->AABBHeight }, { 0.0f,1.0f,0.0f,1.0f });
                             }
                         }
                     }                 
                 }
                 double draw = glfwGetTime();
-                Renderer::DrawRotatedQuad(e->pos, e->size, e->rotation, e->colour);
-                //Renderer::DrawQuad(e->pos, { e->AABBWidth, e->AABBHeight }, { 1.0f,0.0f,1.0f,1.0f });
-                
+                Renderer::DrawRotatedQuad(e->transformationMatrix, e->colour);
                 double drawdt = glfwGetTime() - draw;
                 
                 renddt += drawdt;

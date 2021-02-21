@@ -14,6 +14,7 @@ struct Entity
 	float rotation;
 	float angularVelocity;
 	float acceleration;
+	glm::mat4 transformationMatrix;
 	
 	//RigidBody
 	float mass;
@@ -37,7 +38,6 @@ struct Entity
 
 	//Visuals
 	glm::vec4 colour;
-
 };
 void SetEntityMass(Entity* e, float m);
 void AccelerateEntityForward(Entity* e, float rotation, float deltaTime);
@@ -46,3 +46,4 @@ Entity* CloneEntity(Entity* e);
 void UpdateWorldVertices(Entity* e);
 void SetEntityAABB(Entity* e);
 void CopyVertices(Entity* e, glm::vec2* vertices, int count);
+void UpdateTransformationMatrix(Entity* e);

@@ -194,13 +194,6 @@ void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const glm::
 
 void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
 {
-
-    if (s_RendererData->IndexCount >= s_RendererData->MaxIndices 
-        || s_RendererData->TextureSlotIndex  == s_RendererData->MaxTextureSlots)
-        FlushAndReset();
-
-    float texIndex = GetOrAddTextureIndex(tex);
-
     //Don't really need to do a matrix multiplication if we're not rotating
   
     glm::mat4 transform = glm::identity<glm::mat4>();
@@ -224,51 +217,16 @@ void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const std::
     //transform[2][3] = 0;
     //transform[3][3] = 1;
 
-    s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[0];
-    s_RendererData->VertexBufferPtr->TexCoord = { 0.0f,0.0f };
-    s_RendererData->VertexBufferPtr->Colour = colour;
-    s_RendererData->VertexBufferPtr->TextureIndex = texIndex;
-    s_RendererData->VertexBufferPtr++;
+    DrawQuad(transform, tex, colour);
+}
 
-    s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[1];
-    s_RendererData->VertexBufferPtr->TexCoord = { 1.0f, 0.0f };
-    s_RendererData->VertexBufferPtr->Colour = colour;
-    s_RendererData->VertexBufferPtr->TextureIndex = texIndex;
-    s_RendererData->VertexBufferPtr++;
-
-    s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[2];
-    s_RendererData->VertexBufferPtr->TexCoord = { 1.0f, 1.0f };
-    s_RendererData->VertexBufferPtr->Colour = colour;
-    s_RendererData->VertexBufferPtr->TextureIndex = texIndex;
-    s_RendererData->VertexBufferPtr++;
-
-    s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[3];
-    s_RendererData->VertexBufferPtr->TexCoord = { 0.0f, 1.0f };
-    s_RendererData->VertexBufferPtr->Colour = colour;
-    s_RendererData->VertexBufferPtr->TextureIndex = texIndex;
-    s_RendererData->VertexBufferPtr++;
-
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 0] = 0 + s_RendererData->IndexOffset;
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 1] = 1 + s_RendererData->IndexOffset;
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 2] = 2 + s_RendererData->IndexOffset;
-                                                                                
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 3] = 2 + s_RendererData->IndexOffset;
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 4] = 3 + s_RendererData->IndexOffset;
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 5] = 0 + s_RendererData->IndexOffset;
-    s_RendererData->IndexOffset += 4;
-
-    s_RendererData->IndexCount += 6;
+void Renderer::DrawQuad(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+{
+    DrawRotatedQuad(transform, tex, colour);
 }
 
 void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, float rotation, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
 {
-
-    if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
-        || s_RendererData->TextureSlotIndex == s_RendererData->MaxTextureSlots)
-        FlushAndReset();
-
-    float texIndex = GetOrAddTextureIndex(tex);
-
     //can just explicitly write out the matrix most likely THEN DO THAT
     /*
         OLD WAY >>>
@@ -300,6 +258,21 @@ void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, floa
     //transform[2][3] = 0;
     //transform[3][3] = 1;
 
+    DrawRotatedQuad(transform, tex, colour);
+}
+void Renderer::DrawRotatedQuad(const glm::mat4& transform, const glm::vec4& colour)
+{
+    DrawRotatedQuad(transform, s_RendererData->TextureSlots[0], colour);
+}
+
+void Renderer::DrawRotatedQuad(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+{
+    if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
+        || s_RendererData->TextureSlotIndex == s_RendererData->MaxTextureSlots)
+        FlushAndReset();
+
+    float texIndex = GetOrAddTextureIndex(tex);
+
     s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[0];
     s_RendererData->VertexBufferPtr->TexCoord = { 0.0f,0.0f };
     s_RendererData->VertexBufferPtr->Colour = colour;
@@ -327,7 +300,7 @@ void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, floa
     s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 0] = 0 + s_RendererData->IndexOffset;
     s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 1] = 1 + s_RendererData->IndexOffset;
     s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 2] = 2 + s_RendererData->IndexOffset;
-                                                    
+
     s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 3] = 2 + s_RendererData->IndexOffset;
     s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 4] = 3 + s_RendererData->IndexOffset;
     s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 5] = 0 + s_RendererData->IndexOffset;
@@ -335,7 +308,6 @@ void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, floa
 
     s_RendererData->IndexCount += 6;
 
- 
 }
 
 void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, float rotation ,const glm::vec4& colour)
@@ -349,12 +321,6 @@ void Renderer::DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const g
 }
 void Renderer::DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
 {
-    if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
-        || s_RendererData->TextureSlotIndex == s_RendererData->MaxTextureSlots)
-        FlushAndReset();
-
-    float texIndex = GetOrAddTextureIndex(tex);
-
     glm::mat4 transform = glm::identity<glm::mat4>();
     transform[0][0] = size.x;
     //transform[1][0] = 0;
@@ -375,32 +341,7 @@ void Renderer::DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const s
     //transform[1][3] = 0;
     //transform[2][3] = 0;
     //transform[3][3] = 1;
-   
-
-    s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[4];
-    s_RendererData->VertexBufferPtr->TexCoord = { 0.0f,0.0f };
-    s_RendererData->VertexBufferPtr->Colour = colour;
-    s_RendererData->VertexBufferPtr->TextureIndex = texIndex;
-    s_RendererData->VertexBufferPtr++;
-
-    s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[5];
-    s_RendererData->VertexBufferPtr->TexCoord = { 1.0f, 0.0f };
-    s_RendererData->VertexBufferPtr->Colour = colour;
-    s_RendererData->VertexBufferPtr->TextureIndex = texIndex;
-    s_RendererData->VertexBufferPtr++;
-
-    s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[6];
-    s_RendererData->VertexBufferPtr->TexCoord = { 0.0f, 1.0f };
-    s_RendererData->VertexBufferPtr->Colour = colour;
-    s_RendererData->VertexBufferPtr->TextureIndex = texIndex;
-    s_RendererData->VertexBufferPtr++;
-
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 0] = 0 + s_RendererData->IndexOffset;
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 1] = 1 + s_RendererData->IndexOffset;
-    s_RendererData->IndexBufferBase[s_RendererData->IndexCount + 2] = 2 + s_RendererData->IndexOffset;
-    s_RendererData->IndexOffset += 3;
-
-    s_RendererData->IndexCount += 3;
+    DrawRotatedTriangle(transform, tex, colour);
 }
 
 void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, float rotation, const glm::vec4& colour)
@@ -409,12 +350,7 @@ void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, 
 }
 void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, float rotation, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
 {
-    if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
-        || s_RendererData->TextureSlotIndex == s_RendererData->MaxTextureSlots)
-        FlushAndReset();
-
-    float texIndex = GetOrAddTextureIndex(tex);
-
+    
     double sinRot = sin(rotation);
     double cosRot = cos(rotation);
 
@@ -439,6 +375,15 @@ void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, 
     //transform[2][3] = 0;
     //transform[3][3] = 1;
 
+    DrawRotatedTriangle(transform, tex, colour);
+}
+void Renderer::DrawRotatedTriangle(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+{
+    if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
+        || s_RendererData->TextureSlotIndex == s_RendererData->MaxTextureSlots)
+        FlushAndReset();
+
+    float texIndex = GetOrAddTextureIndex(tex);
 
     s_RendererData->VertexBufferPtr->Position = transform * s_RendererData->VertexPositions[4];
     s_RendererData->VertexBufferPtr->TexCoord = { 0.0f,0.0f };
