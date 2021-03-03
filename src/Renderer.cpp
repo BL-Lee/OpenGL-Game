@@ -33,7 +33,9 @@ struct RendererData
 
     uint32_t* IndexBufferBase = nullptr;
     uint32_t IndexOffset = 0;
-    std::array<std::shared_ptr<Texture>, MaxTextureSlots> TextureSlots;
+    //Not const? I dont know enough about const to know if i should or not
+    //Ben March 3 2021
+    std::array<const Texture*, MaxTextureSlots> TextureSlots; 
     uint32_t TextureSlotIndex;
 
     glm::vec4 VertexPositions[7];
@@ -71,8 +73,8 @@ void Renderer::Init()
 
     s_RendererData->shader = std::make_shared<Shader>("res/shaders/FlatTexture.shader");
     
-
-    std::shared_ptr<Texture>whiteTexture = std::make_shared<Texture>("res/textures/White.png");
+    
+    Texture* whiteTexture = new Texture("res/textures/White.png");
     //unsigned char white[] = { 0xff, 0xff, 0xff, 0xff};
     //s_RendererData->whiteTexture->SetData(white, sizeof(unsigned char) * 4);
     whiteTexture->Bind(0);
@@ -192,7 +194,7 @@ void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const glm::
     DrawQuad(pos, size, s_RendererData->TextureSlots[0], colour);
 }
 
-void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const Texture* tex, const glm::vec4& colour)
 {
     //Don't really need to do a matrix multiplication if we're not rotating
   
@@ -220,12 +222,12 @@ void Renderer::DrawQuad(const glm::vec3& pos, const glm::vec2& size, const std::
     DrawQuad(transform, tex, colour);
 }
 
-void Renderer::DrawQuad(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+void Renderer::DrawQuad(const glm::mat4& transform, const Texture* tex, const glm::vec4& colour)
 {
     DrawRotatedQuad(transform, tex, colour);
 }
 
-void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, float rotation, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, float rotation, const Texture* tex, const glm::vec4& colour)
 {
     //can just explicitly write out the matrix most likely THEN DO THAT
     /*
@@ -260,12 +262,12 @@ void Renderer::DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, floa
 
     DrawRotatedQuad(transform, tex, colour);
 }
-void Renderer::DrawRotatedQuad(const glm::mat4& transform, const glm::vec4& colour)
+void Renderer::DrawRotatedQuad(const glm::mat4& transform, const glm::vec4& colour )
 {
     DrawRotatedQuad(transform, s_RendererData->TextureSlots[0], colour);
 }
 
-void Renderer::DrawRotatedQuad(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+void Renderer::DrawRotatedQuad(const glm::mat4& transform, const Texture* tex, const glm::vec4& colour)
 {
     if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
         || s_RendererData->TextureSlotIndex == s_RendererData->MaxTextureSlots)
@@ -319,7 +321,7 @@ void Renderer::DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const g
 {
     DrawTriangle(pos, size, s_RendererData->TextureSlots[0], colour);
 }
-void Renderer::DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+void Renderer::DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const Texture* tex, const glm::vec4& colour)
 {
     glm::mat4 transform = glm::identity<glm::mat4>();
     transform[0][0] = size.x;
@@ -348,7 +350,7 @@ void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, 
 {
     DrawRotatedTriangle(pos, size, rotation, s_RendererData->TextureSlots[0], colour);
 }
-void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, float rotation, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, float rotation, const Texture* tex, const glm::vec4& colour)
 {
     
     double sinRot = sin(rotation);
@@ -377,7 +379,7 @@ void Renderer::DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, 
 
     DrawRotatedTriangle(transform, tex, colour);
 }
-void Renderer::DrawRotatedTriangle(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour)
+void Renderer::DrawRotatedTriangle(const glm::mat4& transform, const Texture* tex, const glm::vec4& colour)
 {
     if (s_RendererData->IndexCount >= s_RendererData->MaxIndices
         || s_RendererData->TextureSlotIndex == s_RendererData->MaxTextureSlots)
@@ -438,7 +440,7 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, float widt
 void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const char* text, const std::shared_ptr<Font>& f, const glm::vec4& colour)
 {
     
-    std::shared_ptr<Texture> atlas = f->GetAtlas();
+    Texture* atlas = f->GetAtlas().get();
 
     float texIndex = GetOrAddTextureIndex(atlas);
 
@@ -524,13 +526,14 @@ void Renderer::RenderText(const glm::vec3& pos, const glm::vec2& size, const cha
 
     }
 }
-float Renderer::GetOrAddTextureIndex(const std::shared_ptr<Texture>& tex)
+float Renderer::GetOrAddTextureIndex(const Texture* tex)
 {
     float texIndex = 0.0f;
     for (uint32_t i = 1; i < s_RendererData->TextureSlotIndex; i++)
     {
-        //Definitely fix this if statement later. Ugly as fuck
-        if (*tex.get() == *s_RendererData->TextureSlots[i].get())
+        //NOTE: this compares the pointers. If two identical textures
+        //Get added to the renderer data
+        if (*tex == *s_RendererData->TextureSlots[i]) 
         {
             texIndex = (float)i;
             break;
@@ -574,7 +577,6 @@ void Renderer::RenderUI(UIManager& manager, const std::shared_ptr<OrthoCamera>& 
             e->text, e->font, e->textColour);
     }
     EndScene();
-
 }
 
 //Used to start a new batch
@@ -584,7 +586,6 @@ void Renderer::FlushAndReset()
 
     s_RendererData->VertexBufferPtr = s_RendererData->VertexBufferBase;
     s_RendererData->IndexCount = 0;
-
     s_RendererData->TextureSlotIndex = 1;
 }
 

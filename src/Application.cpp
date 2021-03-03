@@ -92,11 +92,12 @@ bool Application::OnKeyPress(KeyPressedEvent& e)
     {
         case GLFW_KEY_SPACE:
         {
-            Entity* bullet = Registry::cloneEntity(2);  //for bullet for now CLEANUP CLEANUP
-            Entity* player = Registry::getEntityByKey(0); // player
+            Entity* b = CloneEntity(bullet);  
+            Registry::addEntity(b);
+            //Entity* player = Registry::getEntityByKey(0); // player
             
-            bullet->velocity = player->velocity + glm::vec2{ cos(player->rotation), sin(player->rotation) } * 100.0f;
-            bullet->pos = player->pos + glm::vec3{ cos(player->rotation), sin(player->rotation),0.0f } * 5.0f;
+            b->velocity = player->velocity + glm::vec2{ cos(player->rotation), sin(player->rotation) } * 100.0f;
+            b->pos = player->pos + glm::vec3{ cos(player->rotation), sin(player->rotation),0.0f } * 5.0f;
         }break;
     }
     return true;
@@ -126,7 +127,7 @@ bool Application::OnMousePress(MousePressedEvent& e)
 void Application::Run()
 {
 
-    std::shared_ptr<Texture> outlineTex = std::make_shared<Texture>("res/textures/InvertexOutline.png");
+    Texture* outlineTex = new Texture("res/textures/outlineLow.png");
 
     std::shared_ptr<Font> m_silkFont = std::make_shared<Font>();
     TextBox fps({ -window->GetWidth() / 2, window->GetHeight() / 2 - 20, 0.22f }, { 100.0f,20.0f }, { 1.0f,0.5f,1.0f,1.0f }, "123456789101111111111111111111111111111111111111111111111111", m_silkFont);
@@ -139,32 +140,31 @@ void Application::Run()
     m_UIManager.AddTextBox(rendererdt);
     glm::vec2 basevertices[3] = { glm::vec2(1.0f, 0.0f), glm::vec2(-0.5f, -0.86602540378f), glm::vec2(-0.5f, 0.86602540378f) };
 
-    Entity player = {};
-    player.pos = { 23.232323f,45.5f,-0.1f };
-    player.size = { 20.0f,10.0f };
-    player.rotation = 1.3f;
-    player.acceleration = 200.0f;
-    player.colour = { 0.7f,0.1f,0.2f,1.0f };
-    player.Accelerate = AccelerateEntityForward;
-    player.UpdateTransform = UpdateTransform;
-    player.mass = 1.0f;
-    player.inverseMass = 1.0f;
-    player.restitution = 0.0f;
-    player.gravityDirection = { 0.0f, -1.0f };
-    player.vertexCount = 3;
-    SetEntityAABB(&player);
-    memcpy(player.localVertices, basevertices, sizeof(glm::vec2) * player.vertexCount);
+    player = (Entity*)calloc(1,sizeof(Entity));
+    player->pos = { 23.232323f,45.5f,-0.1f };
+    player->size = { 20.0f,10.0f };
+    player->rotation = 1.3f;
+    player->acceleration = 200.0f;
+    player->colour = { 0.7f,0.1f,0.2f,1.0f };
+    player->Accelerate = AccelerateEntityForward;
+    player->UpdateTransform = UpdateTransform;
+    player->restitution = 0.0f;
+    player->gravityDirection = { 0.0f, -1.0f };
+    SetEntityAABB(player);
+    CopyVertices(player, basevertices, 3);
+    SetEntityMass(player, 1.0f);
     
     glm::vec2 box[4] = { { -0.5f, -0.5f },
                          { 0.5f, -0.5f},
                          { 0.5f,  0.5f},
                          { -0.5f, 0.5f } };
-    Entity* asteroid = (Entity*)calloc(1, sizeof(Entity));
+    asteroid = (Entity*)calloc(1, sizeof(Entity));
     asteroid->pos = { 0.0f,-300.0f,0.0f };
     asteroid->size = { 10.0f,5.0f };
     asteroid->rotation = 0.0f;
     asteroid->vertexCount = 4;
     asteroid->angularVelocity = 0.0f;
+    asteroid->texture = outlineTex;
     SetEntityAABB(asteroid);
     CopyVertices(asteroid, box, 4);
     SetEntityMass(asteroid, 1.0f);
@@ -172,24 +172,26 @@ void Application::Run()
     asteroid->restitution = 0.2f; 
     asteroid->colour = { 1.0f,0.0f,0.0f,1.0f };
     
-    Entity bullet = {};
-    bullet.size = { 10.0f, 10.0f };
-    SetEntityAABB(&bullet);
-    CopyVertices(&bullet, box, 4);
-    SetEntityMass(&bullet, 1.0f);
-    bullet.UpdateTransform = UpdateTransform;
-    bullet.restitution = 1.0f;
-    bullet.colour = { 1.0f,1.0f,1.0f,1.0f };
+    bullet = (Entity*)calloc(1, sizeof(Entity));
+    bullet->size = { 20.0f, 20.0f };
+    bullet->texture = outlineTex;
+    SetEntityAABB(bullet);
+    CopyVertices(bullet, box, 4);
+    SetEntityMass(bullet, 1.0f);
+    bullet->UpdateTransform = UpdateTransform;
+    bullet->restitution = 1.0f;
+    bullet->colour = { 1.0f,1.0f,1.0f,1.0f };
 
-    Registry::addEntity(&player);
-    Registry::addEntity(asteroid);
-    Registry::addEntity(&bullet);
+    Registry::addEntity(player);
+    //Registry::addEntity(asteroid);
+    //Registry::addEntity(bullet);
 
     double lastTime = glfwGetTime();
     double deltaTime = 0, nowTime = 0;
     double fpsTime = lastTime;
     double prevfpsTime = glfwGetTime();
     double particleCooldown = lastTime;
+    double asteroidSpawnTimer = 0.0;
 
     while (IsRunning)
     {
@@ -198,6 +200,7 @@ void Application::Run()
         nowTime = glfwGetTime();
         deltaTime = (nowTime - lastTime);
         lastTime = nowTime;
+        
         m_Camera->UpdateMovement(window, deltaTime);
 
         if (Input::GetMouseButton(window, GLFW_MOUSE_BUTTON_1))
@@ -208,36 +211,54 @@ void Application::Run()
         }
         if (Input::GetKey(window, GLFW_KEY_UP))
         { 
-            glm::vec2 direction = { cos(player.rotation), sin(player.rotation) };
+            glm::vec2 direction = { cos(player->rotation), sin(player->rotation) };
             
             if (nowTime - particleCooldown > 0.016)
             {
                 particleCooldown = nowTime;
                 Particle& p = ParticleSystem::GetbaseParticle();
-                p.Pos = player.pos;
-                p.Rotation = player.rotation;
-                p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player.velocity;
+                p.Pos = player->pos;
+                p.Rotation = player->rotation;
+                p.Velocity = 100.0f * -(direction * (Random::Float() + 1.0f)) - player->velocity;
                 ParticleSystem::Add(1);
             }
             
-            player.Accelerate(&player, player.rotation, deltaTime);
+            player->Accelerate(player, player->rotation, deltaTime);
         }
         if (Input::GetKey(window, GLFW_KEY_RIGHT))
-            player.rotation -= glm::radians(200.0f) * deltaTime;
+            player->rotation -= glm::radians(200.0f) * deltaTime;
         if (Input::GetKey(window, GLFW_KEY_LEFT))
-            player.rotation += glm::radians(200.0f) * deltaTime;
+            player->rotation += glm::radians(200.0f) * deltaTime;
         
+        //Add new Astroids on a timer
+        asteroidSpawnTimer += deltaTime;
+        if (asteroidSpawnTimer >= 3.0)
+        {
+            Entity* newAsteroid = CloneEntity(asteroid);
+            newAsteroid->pos = { (Random::Float() - 0.5) * window->GetWidth() * 0.7,(Random::Float() - 0.5) * window->GetHeight() * 0.7,0.0f };
+            newAsteroid->velocity = { (Random::Float() - 0.5) * 100.0, Random::Float() * 100.0 };
+            newAsteroid->size = { Random::Float() * 100.0f, Random::Float() * 100.0f };
+            newAsteroid->rotation = Random::Float() * 3.14f;
+            SetEntityAABB(newAsteroid);
+            SetEntityMass(asteroid, Random::Float() + 2.0f);
+            asteroidSpawnTimer = 0.0;
+            Registry::addEntity(newAsteroid);
+        }
+
+        //Update all entities matrices and vertices
         for (int i = 0; i < Registry::validIndices.size(); i++)
         {
             Entity* e = Registry::getEntityByKey(Registry::validIndices[i]);
             {
                 if (e)
                 {
-                    UpdateWorldVertices(e);
                     UpdateTransformationMatrix(e);
+                    UpdateWorldVertices(e);
                 }
             }
         }
+
+        //Gamelogic
         Renderer::BeginScene(m_Camera);
         double renddt = 0;
         for (int index = 0; index < Registry::validIndices.size(); index++)
@@ -246,6 +267,8 @@ void Application::Run()
             Entity* e = Registry::getEntityByKey(i);
             if (e)
             {
+                //Delete rectangles (bullets and asteroids for now) when they go off screen
+                //CLEANUP this should be dependent on the entity itself
                 if (e->vertexCount == 4)
                 {
                     if (e->pos.x > window->GetWidth() / 2 ||
@@ -270,6 +293,7 @@ void Application::Run()
                     Entity* other = Registry::getEntityByKey(j);
                     if (other)
                     {
+                        //Broad phase collision detection
                         if (
                             e->pos.x - e->AABBWidth < other->pos.x + other->AABBWidth &&
                             e->pos.x + e->AABBWidth > other->pos.x - other->AABBWidth &&
@@ -277,6 +301,7 @@ void Application::Run()
                             e->pos.y - e->AABBHeight < other->pos.y + other->AABBHeight
                             )
                         {             
+                            //Narrow phase collision detection
                             CollisionOverlapData overlapData = Collision::IsColliding(e->vertices, e->vertexCount, other->vertices, other->vertexCount);
                             if (!(overlapData.AToCollisionPoint.x == 0.0f && overlapData.AToCollisionPoint.y == 0.0f))
                             {
@@ -285,27 +310,38 @@ void Application::Run()
                         }
                     }                 
                 }
+                //Temporary rendering for each entity
                 double draw = glfwGetTime();
-                Renderer::DrawRotatedQuad(e->transformationMatrix, e->colour);
+                if (e->texture)
+                {
+                    Renderer::DrawRotatedQuad(e->transformationMatrix, e->texture, e->colour);
+                }
+                else
+                {
+                    Renderer::DrawRotatedQuad(e->transformationMatrix, e->colour);
+                }
                 double drawdt = glfwGetTime() - draw;
                 
                 renddt += drawdt;
             }
         }
  
-        if (player.rotation > glm::two_pi<float>()) //really dont like this, add math constant header with pi as a float so i dont need to do this <float>() crap
-            player.rotation -= glm::two_pi<float>();
-        if (player.rotation < glm::two_pi<float>())
-            player.rotation += glm::two_pi<float>();
+        if (player->rotation > glm::two_pi<float>()) //really dont like this, add math constant header with pi as a float so i dont need to do this <float>() crap
+            player->rotation -= glm::two_pi<float>();
+        if (player->rotation < glm::two_pi<float>())
+            player->rotation += glm::two_pi<float>();
 
         double draw = glfwGetTime();
         ParticleSystem::Draw((float)deltaTime);
-        Renderer::DrawRotatedTriangle(player.pos, player.size, player.rotation, player.colour);
+        Renderer::DrawRotatedTriangle(player->pos, player->size, player->rotation, player->colour);
         double drawdt = glfwGetTime() - draw;
         renddt += drawdt;
         double gpuTime = glfwGetTime();
         Renderer::EndScene();
         double gpuTimeElapsed = glfwGetTime() - gpuTime;
+
+        //UI for diagnostics
+        //On a 0.2 timer to avoid flickering
         if (fpsTime - prevfpsTime > 0.2)
         {
             prevfpsTime = glfwGetTime();
@@ -320,6 +356,7 @@ void Application::Run()
         fpsTime += deltaTime;
         window->OnUpdate();
     }
+    free(outlineTex);
 }
 
 int main()

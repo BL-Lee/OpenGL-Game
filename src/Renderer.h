@@ -22,22 +22,23 @@ public:
     //SERIOUSLY busted. maybe say fuck it and pass an entity
     
     static void DrawQuad(const glm::vec3& pos, const glm::vec2& size, const glm::vec4& colour = { 1.0f, 1.0f, 1.0f, 1.0f });
-    static void DrawQuad(const glm::vec3& pos, const glm::vec2& size, const std::shared_ptr<Texture>& tex, const glm::vec4& colour = { 1.0f, 1.0f, 1.0f, 1.0f });
-    static void DrawQuad(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
+    static void DrawQuad(const glm::vec3& pos, const glm::vec2& size, const Texture* tex, const glm::vec4& colour = { 1.0f, 1.0f, 1.0f, 1.0f });
+    static void DrawQuad(const glm::mat4& transform, const Texture* tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
     //static void DrawQuad(const glm::mat4& transform, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
     
 
     static void DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, float rotation, const glm::vec4& colour = { 1.0f, 1.0f, 1.0f, 1.0f });
-    static void DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, float rotation, const std::shared_ptr<Texture>& tex, const glm::vec4& colour = { 1.0f, 1.0f, 1.0f, 1.0f });
-    static void DrawRotatedQuad(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
+    static void DrawRotatedQuad(const glm::vec3& pos, const glm::vec2& size, float rotation, const Texture* tex, const glm::vec4& colour = { 1.0f, 1.0f, 1.0f, 1.0f });
+    static void DrawRotatedQuad(const glm::mat4& transform, const Texture* tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
+
     static void DrawRotatedQuad(const glm::mat4& transform, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
 
     static void DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
-    static void DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const std::shared_ptr<Texture>& tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
+    static void DrawTriangle(const glm::vec3& pos, const glm::vec2& size, const Texture* tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
     
     static void DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, float rotation, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
-    static void DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, float rotation, const std::shared_ptr<Texture>& tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
-    static void DrawRotatedTriangle(const glm::mat4& transform, const std::shared_ptr<Texture>& tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
+    static void DrawRotatedTriangle(const glm::vec3& pos, const glm::vec2& size, float rotation, const Texture* tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
+    static void DrawRotatedTriangle(const glm::mat4& transform, const Texture* tex, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
 
     static void DrawLine(const glm::vec3& start, const glm::vec3& end, float width = 2.0f, const glm::vec4& colour = { 1.0f,1.0f,1.0f,1.0f });
 
@@ -54,5 +55,5 @@ public:
     
 private:
     static void FlushAndReset();
-    static float GetOrAddTextureIndex(const std::shared_ptr<Texture>& tex);
+    static float GetOrAddTextureIndex(const Texture* tex);
 };

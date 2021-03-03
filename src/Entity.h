@@ -1,5 +1,6 @@
 #pragma once
 #include "glm/glm.hpp"
+#include "Texture.h"
 #include <vector>
 const int MAX_RIGIDBODY_HULL = 32;
 
@@ -38,6 +39,7 @@ struct Entity
 
 	//Visuals
 	glm::vec4 colour;
+	Texture* texture; 
 };
 void SetEntityMass(Entity* e, float m);
 void AccelerateEntityForward(Entity* e, float rotation, float deltaTime);
