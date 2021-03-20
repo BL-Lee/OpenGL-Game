@@ -5,7 +5,7 @@ class Registry
 {
 public:
 	//Counter is used to insert, incremented each insert
-	static uint32_t idCounter;
+	static uint64_t idCounter;
 	static uint32_t maxSize;
 	static Entity** registry;
 	static uint32_t* validityArray;
